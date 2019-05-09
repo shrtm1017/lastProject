@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<definition name="layout" template="/WEB-INF/views/module/layout.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/module/header.jsp" />
+		<put-attribute name="left" value="/WEB-INF/views/module/left.jsp" />
+		<put-attribute name="content" value="" />
+		<put-attribute name="footer" value="/WEB-INF/views/module/footer.jsp" />
+	</definition>
+
+	<definition name="main" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/main.jsp" />
+	</definition>
+
+	<!-- 업무 관리 부분 -->
+	<definition name="workManage" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/work/workManage.jsp" />
+	</definition>
+
+	<definition name="projectInsert" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/work/projectInsert.jsp" />
+	</definition>
+
+	<definition name="projectDetail" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/work/projectDetail.jsp" />
+	</definition>
+
+	<definition name="projectWorkInsert" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/work/projectWorkInsert.jsp" />
+	</definition>
+
+	<definition name="workInsert" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/work/workInsert.jsp" />
+	</definition>
+
+	<definition name="workDetail" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/work/workDetail.jsp" />
+	</definition>
+
+	<definition name="ganttChart" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/work/ganttChart.jsp" />
+	</definition>
+
+	<!-- 메일 부분 -->
+	<definition name="emailSend" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/email/emailSend.jsp" />
+	</definition>
+
+	<definition name="receiveMailbox" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/email/receiveMailbox.jsp" />
+	</definition>
+
+	<definition name="receiveMailboxDetail" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/email/receiveMailboxDetail.jsp" />
+	</definition>
+
+	<definition name="sendMailbox" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/email/sendMailbox.jsp" />
+	</definition>
+
+	<definition name="sendMailboxDetail" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/email/sendMailboxDetail.jsp" />
+	</definition>
+
+	<definition name="tempMailbox" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/email/tempMailbox.jsp" />
+	</definition>
+
+	<!-- 화상회의 부분 -->
+	<definition name="vc" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/vc/vc.jsp" />
+	</definition>
+
+	<!-- 게시판 관리 부분 -->
+	<definition name="noticeBoard" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/notice/noticeBoard.jsp" />
+	</definition>
+
+	<definition name="noticeRegister" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/notice/noticeRegister.jsp" />
+	</definition>
+
+	<definition name="detail" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/notice/detail.jsp" />
+	</definition>
+
+	<definition name="noticemodify" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/notice/modify.jsp" />
+	</definition>
+
+	<!-- 설문조사 페이지 -->
+	<definition name="researchList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/research/researchList.jsp" />
+	</definition>
+
+	<definition name="researchInsert" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/research/researchInsert.jsp" />
+	</definition>
+
+	<definition name="researchUpdate" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/research/researchUpdate.jsp" />
+	</definition>
+
+	<definition name="researchDetail" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/research/researchDetail.jsp" />
+	</definition>
+
+	<!-- 명함 관리 부분 -->
+	<definition name="callingCardList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/callingcard/callingCardList.jsp" />
+	</definition>
+
+	<definition name="callingCardForm" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/callingcard/callingCardForm.jsp" />
+	</definition>
+
+	<definition name="callingCardModify" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/callingcard/callingCardModify.jsp" />
+	</definition>
+
+	<!-- 회원 정보 페이지 -->
+	<definition name="userInfo" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employee/userInfo.jsp" />
+	</definition>
+	<definition name="userLog" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employee/userLog.jsp" />
+	</definition>
+
+	<definition name="userPassCheck" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employee/userPassCheck.jsp" />
+	</definition>
+
+	<definition name="userModify" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employee/userModify.jsp" />
+	</definition>
+
+	<!-- 관리자 메뉴 -->
+	<definition name="userManage" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/userManage.jsp" />
+	</definition>
+
+	<definition name="userDetail" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/userDetail.jsp" />
+	</definition>
+
+	<definition name="userUpdate" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/userUpdate.jsp" />
+	</definition>
+
+	<definition name="userInsert" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/userInsert.jsp" />
+	</definition>
+
+	<definition name="approvalSignLine" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/approvalSignLine.jsp" />
+	</definition>
+
+	<definition name="approvalAllList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/admin/approvalAllList.jsp" />
+	</definition>
+
+
+
+	<!-- 사원연락처 관리 -->
+	<definition name="employeeContactMange" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employeeContact/employeeContactMange.jsp" />
+	</definition>
+	<definition name="employeeContactmodify" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/employeeContact/modify.jsp" />
+	</definition>
+	<!-- 근태관리 -->
+	<definition name="timeManagement" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/timemanagement/timeManagement.jsp" />
+	</definition>
+	<definition name="annualDay" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/timemanagement/annualDay.jsp" />
+	</definition>
+	<definition name="Use_annualDay_List" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/timemanagement/Use_annualDay.jsp" />
+	</definition>
+
+
+
+	<!-- 스케쥴 관리 -->
+	<definition name="todolist" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/todolist/todolist.jsp" />
+	</definition>
+
+	<definition name="calendar" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/calendar/fullcalendar.jsp" />
+	</definition>
+
+	<!-- 전자결재 -->
+	<definition name="apvForm" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/approval/apvForm.jsp" />
+	</definition>
+
+	<definition name="apvList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/approval/apvList.jsp" />
+	</definition>
+
+	<definition name="apvReceive" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/approval/apvReceive.jsp" />
+	</definition>
+
+	<definition name="apvReference" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/approval/apvReference.jsp" />
+	</definition>
+
+	<definition name="apvSend" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/approval/apvSend.jsp" />
+	</definition>
+
+	<!-- 쪽지 부분 -->
+	<definition name="messageList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/message/messageList.jsp" />
+	</definition>
+
+	<definition name="messageInsert" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/message/messageInsert.jsp" />
+	</definition>
+
+	<definition name="messageMyReceive" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/message/messageMyReceive.jsp" />
+	</definition>
+
+	<definition name="messageReceive" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/message/messageReceive.jsp" />
+	</definition>
+
+	<definition name="messageImp" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/message/messageImp.jsp" />
+	</definition>
+
+	<!-- 자료실 -->
+	<definition name="datas" extends="layout">
+		<put-attribute name="content" value="/WEB-INF/views/webhard/webhard.jsp" />
+	</definition>
+
+	<!-- 증명서 관리 부분 -->
+	<definition name="certificateapply" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/certificate/certificateApply.jsp" />
+	</definition>
+
+	<definition name="certificateList" extends="layout">
+		<put-attribute name="content"
+			value="/WEB-INF/views/certificate/certificateList.jsp" />
+	</definition>
+
+
+	<!-- 여기까지 -->
+</tiles-definitions>

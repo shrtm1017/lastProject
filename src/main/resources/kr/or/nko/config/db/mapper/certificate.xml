@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ <mapper namespace="certificate">
+
+	<!-- 전체리스트 및 검색 리스트 뽑기위한 쿼리 --> 
+	<select id="selectCertificatePaging_Search" resultType="CertificateVo" parameterType="map">
+		select *
+		from (select a.*, rownum rn
+				from (select certificate.*
+						from certificate
+						<where>
+							<if test="crt_div_sq != null and crt_div_sq != 0">
+								crt_div_sq = #{crt_div_sq} 
+							</if>
+							<if test="crt_whether != null and crt_whether != 0">
+								or crt_whether = #{crt_whether}
+							</if>
+							<if test="authority != 1">
+								and crt_emp_sq = #{emp_sq}
+							</if>
+						</where>
+					order by crt_sq desc) a) a
+		where rn between (#{page}-1) * #{pageSize}+1 and #{page} * #{pageSize}
+	</select>
+	
+	 <!-- 전체 증명서 수 조회 -->
+	 <select id="getCrtCnt" resultType="Integer">
+	 	select count(*)
+	 	  from certificate
+	 </select>
+	
+	 <!-- 조건검색 증명서 수 조회 -->
+	<select id="getSearchCrtCnt" resultType="int" parameterType="CertificateVo">
+		select count(*)
+		from certificate
+		<where>
+			<if test="crt_div_sq != null and crt_div_sq != 0">
+				crt_div_sq = #{crt_div_sq} 
+			</if>
+			<if test="crt_whether != null and crt_whether != 0">
+				or crt_whether = #{crt_whether}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 증명서 추가 -->
+	<insert id="insertCertificate" parameterType="CertificateVo">
+		insert into certificate
+			(
+			 crt_sq,
+			 crt_emp_sq, 
+			 crt_div_sq, 
+			 crt_dt, 
+			 crt_whether,
+			 crt_con,
+			 crt_emp_dpt,
+			 crt_emp_grade,
+			 crt_emp_phone,
+			 crt_emp_nm,
+			 crt_dos_str,
+			 crt_dos_end,
+			 crt_emp_addr1,
+			 crt_emp_addr2,
+			 crt_submission,
+			 crt_subdt
+			)
+		 	values
+		 	  (
+		 	   certificate_seq.nextval, #{crt_emp_sq}, #{crt_div_sq}, #{crt_dt}, #{crt_whether},
+		 	   #{crt_con},#{crt_emp_dpt}, #{crt_emp_grade}, #{crt_emp_phone}, #{crt_emp_nm},
+		 	   #{crt_dos_str}, #{crt_dos_end}, #{crt_emp_addr1},#{crt_emp_addr2},#{crt_submission},#{crt_subdt}
+		 	  )	
+	</insert> 
+ 	
+ 	<!-- 증명서 승인시 업뎃 -->
+ 	<update id="updateCertificate" parameterType="CertificateVo">
+ 		update certificate
+ 		   set crt_emp_app_sq = #{crt_emp_app_sq},
+ 		   	   crt_whether = #{crt_whether},
+ 		       crt_sign_dt = #{crt_sign_dt}
+ 		 where crt_sq = #{crt_sq}      
+ 	</update>
+ 	
+ 	<!-- 상세보기  -->
+ 	<select id="selectCrtDetail" resultType="CertificateVo" parameterType="int">
+ 		select *
+ 	      from certificate
+ 	    where CRT_SQ = #{CRT_SQ}  
+ 	</select>
+ 	
+ 	<!-- 증명서 구분번호 리스트 뽑기 -->
+ 	<select id="selectCrtDivList" resultType="CertificateDivVo">
+ 		select *
+ 		  from certificate_div
+ 	</select>
+ 	
+ </mapper>

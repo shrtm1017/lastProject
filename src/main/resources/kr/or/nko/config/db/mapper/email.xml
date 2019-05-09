@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="email">
+
+	<!--
+		db 데이터타입이 clob형일경우 string으로 받아오면 문제없지만
+		map에 담아 사용하는경우 명시적으로 type을 map으로 선언해줘야 정상적으로 출력이 가능하다!!!
+		map에 담기면 오라클에서 컬럼명이 대문자로 넘어오기때문에
+		vo에 담아 사용하는경우는 명시적으로 type을 vo로 선언해주면 소문자로 담긴다
+	 -->
+	<resultMap type="EmlTempVo" id="tempResultMap">
+		<result column="eml_temp_con" property="eml_temp_con" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	<resultMap type="EmlSendVo" id="sendResultMap">
+		<result column="eml_send_con" property="eml_send_con" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+	<resultMap type="EmlReceiveVo" id="recResultMap">
+		<result column="eml_rec_con" property="eml_rec_con" jdbcType="CLOB" javaType="java.lang.String"/>
+	</resultMap>
+
+	<!-- 임시메일 등록 -->
+	<insert id="insertTemp" parameterType="EmlTempVo">
+		<!-- insert되기전에 시퀀스값을 구하는 방법 -->
+		<selectKey keyProperty="eml_temp_sq" resultType="int" order="BEFORE">
+	   		select eml_temp_seq.nextval from dual
+	    </selectKey>
+	    
+		insert into eml_temp(eml_temp_sq, eml_temp_nm, eml_temp_con, eml_temp_rec, eml_temp_dt, eml_temp_emp_sq, eml_temp_chk)
+		values(#{eml_temp_sq}, #{eml_temp_nm}, #{eml_temp_con}, #{eml_temp_rec}, sysdate, #{eml_temp_emp_sq}, 'Y')
+	</insert>
+	
+	<!-- 임시파일 등록 -->
+	<insert id="insertTempFile" parameterType="EmlTempFileVo">
+		insert into eml_temp_file(eml_temp_fl_sq, eml_temp_sq, eml_temp_fl_nm, eml_temp_fl_path)
+		values(eml_temp_file_seq.nextval, #{eml_temp_sq}, #{eml_temp_fl_nm}, #{eml_temp_fl_path})
+	</insert>
+	
+	<!-- 임시메일 해당 임시파일 조회 -->
+	<select id="selectTempFileList" resultType="EmlTempFileVo" parameterType="int">
+		select *
+		from eml_temp_file
+		where eml_temp_sq = #{eml_temp_sq}
+	</select>
+	
+	<!-- 임시메일 삭제 -->
+	<delete id="deleteTemp" parameterType="int">
+		delete from eml_temp
+		where eml_temp_sq = #{eml_temp_sq}
+	</delete>
+	
+	<!-- 임시메일 해당 임시파일 삭제 -->
+	<delete id="deleteTempFiles" parameterType="int">
+		delete from eml_temp_file
+		where eml_temp_sq = #{eml_temp_sq}
+	</delete>
+	
+	<!-- 임시파일 삭제 -->
+	<delete id="deleteTempFile" parameterType="int">
+		delete from eml_temp_file
+		where eml_temp_fl_sq = #{eml_temp_fl_sq}
+	</delete>
+	
+	<!-- 임시파일번호로 임시파일 조회 -->
+	<select id="selectTempFile" resultType="EmlTempFileVo" parameterType="int">
+		select *
+		from eml_temp_file
+		where eml_temp_fl_sq = #{eml_temp_fl_sq}
+	</select>
+	
+	<!-- 임시메일조회 -->
+	<!-- 조건에 따라 보낸사원번호 or 임시메일번호로 조회 -->
+	<select id="selectTempList" resultType="EmlTempVo" parameterType="EmlTempVo" resultMap="tempResultMap">
+		select * 
+		from eml_temp
+		<!-- 
+			select * from eml_temp where and eml_temp_sq = #{eml_temp_sq}
+			이런식으로 될경우 문법엔 맞지 않지만 동적인 where 조건을 사용시에는 mybatis에서 자동으로 삭제해줌
+		 -->
+		<where>
+			<if test="eml_temp_emp_sq != null and eml_temp_emp_sq != 0">
+				eml_temp_emp_sq = #{eml_temp_emp_sq}
+			</if>
+			<if test="eml_temp_sq != null and eml_temp_sq != 0">
+				and eml_temp_sq = #{eml_temp_sq}
+			</if>
+		</where>
+		order by 5 desc <!-- 작성날짜 최신순으로 정렬 -->
+	</select>
+	
+	<!-- 임시메일 수정 -->
+	<update id="updateTemp" parameterType="EmlTempVo">
+		update eml_temp
+		set eml_temp_nm = nvl(#{eml_temp_nm, jdbcType=VARCHAR}, eml_temp_nm),
+			eml_temp_con = nvl(#{eml_temp_con, jdbcType=CLOB}, eml_temp_con),
+			eml_temp_rec = nvl(#{eml_temp_rec, jdbcType=VARCHAR}, eml_temp_rec),
+			eml_temp_chk = nvl(#{eml_temp_chk, jdbcType=VARCHAR}, eml_temp_chk)
+			
+		<!-- 읽은표시 값이 존재하지 않을때만 작성날짜 수정 -->
+		<if test="eml_temp_chk == null and eml_temp_chk == ''">
+			, eml_temp_dt = sysdate
+		</if>
+		where
+			eml_temp_sq = #{eml_temp_sq}
+	</update>
+	
+	<!-- 보낸메일 등록 -->
+	<insert id="insertSend" parameterType="EmlSendVo">
+		insert into eml_send(eml_send_sq, eml_emp_send_sq, eml_send_dt, eml_send_nm, eml_send_con, eml_send_rec, eml_send_ipt, eml_send_del)
+		values(#{eml_send_sq}, #{eml_emp_send_sq}, sysdate, #{eml_send_nm}, #{eml_send_con}, #{eml_send_rec}, 'N', 'N')
+	</insert>
+	
+	<!-- 파일함 등록 -->
+	<insert id="insertFile" parameterType="EmlFileVo">
+		insert into eml_file(eml_fl_sq, eml_send_sq, eml_rec_sq, eml_fl_nm, eml_fl_path)
+		values(eml_fl_seq.nextval,
+		<choose>
+			<when test="eml_send_sq != null and eml_send_sq != 0">
+				#{eml_send_sq},
+			</when>	
+			<otherwise>
+				null,
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="eml_rec_sq != null and eml_rec_sq != 0">
+				#{eml_rec_sq},
+			</when>	
+			<otherwise>
+				null,
+			</otherwise>
+		</choose>
+		#{eml_fl_nm}, #{eml_fl_path})
+	</insert>
+	
+	<!-- 받은메일 등록 -->
+	<insert id="insertReceive" parameterType="EmlReceiveVo">
+		<!-- insert되기전에 시퀀스값을 구하는 방법 -->
+		<selectKey keyProperty="eml_rec_sq" resultType="int" order="BEFORE">
+	   		select eml_rec_seq.nextval from dual
+	    </selectKey>
+		insert into eml_receive(eml_rec_sq, eml_emp_rec_sq, eml_emp_send_sq, eml_send_sq, eml_rec_dt, eml_rec_chk, eml_rec_nm, eml_rec_con, eml_rec_ipt, eml_rec_del, eml_send_email)
+		values(#{eml_rec_sq}, #{eml_emp_rec_sq},
+		
+		<choose>
+			<when test="eml_emp_send_sq != null and eml_emp_send_sq != 0">
+				#{eml_emp_send_sq},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="eml_send_sq != null and eml_send_sq != 0">
+				#{eml_send_sq},
+			</when>
+			<otherwise>
+				null,
+			</otherwise>
+		</choose>
+		<choose>
+			<when test="eml_rec_dt != null and eml_rec_dt != ''">
+				#{eml_rec_dt},
+			</when>
+			<otherwise>
+				sysdate,
+			</otherwise>
+		</choose>
+		#{eml_rec_chk}, #{eml_rec_nm}, #{eml_rec_con}, #{eml_rec_ipt}, 'N', #{eml_send_email})
+	</insert>
+	
+	<!-- 보낸메일 조회 -->
+	<!-- 조건에 따라 보낸사원번호 or 보낸메일번호로 조회 -->
+	<select id="selectSendList" resultType="EmlSendVo" parameterType="map" resultMap="sendResultMap">
+		select * 
+		from eml_send
+		<!-- 
+			select * from eml_send where and eml_send_sq = #{eml_send_sq}
+			이런식으로 될경우 문법엔 맞지 않지만 동적인 where 조건을 사용시에는 mybatis에서 자동으로 삭제해줌
+		 -->
+		<where>
+			<if test="eml_emp_send_sq != null and eml_emp_send_sq != 0">
+				eml_emp_send_sq = #{eml_emp_send_sq}
+			</if>
+			<if test="eml_send_sq != null and eml_send_sq != 0">
+				and eml_send_sq = #{eml_send_sq}
+			</if>
+		</where>
+		order by 3 desc <!-- 보낸날짜 최신순으로 정렬 -->
+	</select>
+	
+	<!-- 보낸메일 파일 조회 -->
+	<!-- 조건에 따라 보낸메일번호 or 메일파일번호로 조회, 외부에서 받아온메일 조건추가(받은메일번호로 조회) -->
+	<select id="selectFileList" resultType="EmlFileVo" parameterType="map">
+		select *
+		from eml_file
+		<where>
+			<if test="eml_send_sq != null and eml_send_sq != 0">
+				eml_send_sq = #{eml_send_sq}
+			</if>
+			<if test="eml_fl_sq != null and eml_fl_sq != 0">
+				and eml_fl_sq = #{eml_fl_sq}
+			</if>
+			<if test="eml_rec_sq != null and eml_rec_sq != 0">
+				or eml_rec_sq = #{eml_rec_sq}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 받은메일 조회 -->
+	<!-- 조건에 따라 받은사원번호 or 받은메일번호로 조회 -->
+	<select id="selectReceiveList" resultType="EmlReceiveVo" parameterType="map" resultMap="recResultMap">
+		select *
+		from eml_receive
+		<where>
+			<if test="eml_emp_rec_sq != null and eml_emp_rec_sq != 0">
+				eml_emp_rec_sq = #{eml_emp_rec_sq}
+			</if>
+			<if test="eml_rec_sq != null and eml_rec_sq != 0">
+				and eml_rec_sq = #{eml_rec_sq}
+			</if>
+			<if test="eml_rec_chk != null and eml_rec_chk != ''">
+				and eml_rec_chk = #{eml_rec_chk}
+			</if>
+		</where>
+		order by 5 desc <!-- 받은날짜 최신순으로 정렬 -->
+	</select>
+	
+	<!-- 보낸메일 중요표시, 삭제여부 수정 -->
+	<update id="updateSend" parameterType="EmlSendVo">
+		update eml_send
+		set eml_send_ipt = nvl(#{eml_send_ipt, jdbcType=VARCHAR}, eml_send_ipt), <!-- null일 경우 원래값 세팅 -->
+			eml_send_del = nvl(#{eml_send_del, jdbcType=VARCHAR}, eml_send_del)
+		where eml_send_sq = #{eml_send_sq}
+	</update>
+	
+	<!-- 받은메일 중요표시, 읽은표시, 삭제여부, 내용(외부에서 보낸메일 일경우) 수정 -->
+	<update id="updateReceive" parameterType="EmlReceiveVo">
+		update eml_receive
+		set eml_rec_ipt = nvl(#{eml_rec_ipt, jdbcType=VARCHAR}, eml_rec_ipt), <!-- null일 경우 원래값 세팅 -->
+			eml_rec_chk = nvl(#{eml_rec_chk, jdbcType=VARCHAR}, eml_rec_chk),
+			eml_rec_del = nvl(#{eml_rec_del, jdbcType=VARCHAR}, eml_rec_del),
+			eml_rec_con = nvl(#{eml_rec_con, jdbcType=CLOB}, eml_rec_con)
+		where eml_rec_sq = #{eml_rec_sq}
+	</update>
+	
+</mapper>

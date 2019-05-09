@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="schdule">
+	
+	<select id="selectSchedule" parameterType="Map" resultType="ScheduleVo">
+		SELECT 
+			  a.*
+		FROM SCHEDULE a,employee b
+		WHERE a.scd_div_sq = #{scd_div_sq}
+		AND a.SCD_EMP_SQ = b.emp_sq
+		
+		<choose>
+			<when test="scd_div_sq == 1"> <!-- 개인 -->
+				AND a.SCD_EMP_SQ = #{stf_sq}
+			</when>
+			<when test="scd_div_sq == 2"> <!-- 부서 -->
+				AND b.EMP_DPT = #{dpt_sq}
+			</when>
+			<when test="scd_div_sq == 3"> <!-- 회사 -->
+				AND 1=1
+			</when>
+			<otherwise>
+				AND 1=1
+			</otherwise>
+		</choose>
+		
+		ORDER BY scd_str_dt ASC, scd_end_dt ASC
+	</select>
+	
+	<insert id="insertSchedule" parameterType="ScheduleVo">
+		INSERT INTO SCHEDULE(SCD_SQ, SCD_EMP_SQ, SCD_DIV_SQ, SCD_CON, SCD_STR_DT, SCD_END_DT, SCD_TITLE, SCD_SELECT) 
+		
+		VALUES(SCHEDULE_SEQ.NEXTVAL, #{scd_emp_sq}, #{scd_div_sq}, #{scd_con}, 
+		 TO_DATE(#{scd_str_dt}, 'YYYY-MM-DD HH24:MI:SS'), 
+		TO_DATE(#{scd_end_dt}, 'YYYY-MM-DD HH24:MI:SS'),
+		#{scd_title},#{scd_select}
+		)
+	</insert>
+	
+	<select id="readSchedule" parameterType="Map" resultType="ScheduleVo">
+		SELECT 
+			  *
+		FROM SCHEDULE
+		WHERE SCD_SQ = #{scd_sq}
+	</select>
+	
+	<update id="updateSchedule" parameterType="Map">
+		UPDATE SCHEDULE
+		SET scd_title = #{scd_title},
+			scd_con = #{scd_con},
+			scd_str_dt = TO_DATE(#{scd_str_dt}, 'YYYY-MM-DD HH24:MI:SS'),
+			scd_end_dt = TO_DATE(#{scd_end_dt}, 'YYYY-MM-DD HH24:MI:SS')
+		WHERE scd_sq = #{scd_sq}
+	</update>
+	
+	<delete id="deleteSchedule" parameterType="Map">
+		DELETE
+		FROM SCHEDULE
+		WHERE scd_sq = #{scd_sq}
+	</delete>
+	
+	<select id="authoSearch" parameterType="String" resultType="AuthorityVo">
+		select a.aut_emp_sq from authority a, employee b
+		where a.aut_emp_sq = b.emp_sq
+		and a.aut_emp_sq = #{sss}
+		and a.aut_admin_sq = '1'
+		or a.aut_admin_sq = '2'
+	</select>
+	
+</mapper> 

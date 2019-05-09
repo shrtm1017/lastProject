@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="3 seconds">
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+	
+		<layout>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</layout>
+	</appender>
+
+	<logger name="kr.or.nko" level="DEBUG"/>
+	
+	<!-- 불필요한 로그 제외시키기(error 일때만 표시) -->
+	<logger name="org.apache.commons.digester.Digester" level="error"/> <!-- 불필요한 로그 제외시키기(tiles관한 로그) -->
+    
+	<root level="INFO">
+   		<appender-ref ref="console" />
+  	</root>
+  	 
+</configuration>

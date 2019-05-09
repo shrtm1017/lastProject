@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<properties resource="kr/or/nko/config/db/db.properties" />
+	
+	<typeAliases>
+		<typeAlias alias="CallingCardVo" type="kr.or.nko.callingcard.model.CallingCardVo"/>
+		<typeAlias alias="PageVo" type="kr.or.nko.util.model.PageVo"/>
+		<typeAlias alias="EmployeeVo" type="kr.or.nko.employee.model.EmployeeVo"/>
+		<typeAlias alias="AuthorityVo" type="kr.or.nko.admin.model.AuthorityVo"/>
+		<typeAlias alias="DepartmentVo" type="kr.or.nko.department.model.DepartmentVo"/>
+		<typeAlias alias="NoticeVo" type="kr.or.nko.notice.model.NoticeVo"/>
+		<typeAlias alias="ReplyVo" type="kr.or.nko.reply.model.ReplyVo"/>
+		<typeAlias alias="TodolistVo" type="kr.or.nko.todolist.model.TodolistVo"/>
+		<typeAlias alias="ScheduleVo" type="kr.or.nko.schedule.model.ScheduleVo"/>
+		<typeAlias alias="ProjectVo" type="kr.or.nko.work.model.ProjectVo"/>
+		<typeAlias alias="ProjectMemVo" type="kr.or.nko.work.model.ProjectMemVo"/>
+		<typeAlias alias="WorkVo" type="kr.or.nko.work.model.WorkVo"/>
+		<typeAlias alias="WorkFileVo" type="kr.or.nko.work.model.WorkFileVo"/>
+		<typeAlias alias="WorkHistoryVo" type="kr.or.nko.work.model.WorkHistoryVo"/>
+		<typeAlias alias="WorkRelationVo" type="kr.or.nko.work.model.WorkRelationVo"/>
+		<typeAlias alias="ResearchVo" type="kr.or.nko.research.model.ResearchVo"/>
+		<typeAlias alias="QuestionVo" type="kr.or.nko.research.model.QuestionVo"/>
+		<typeAlias alias="AnswerVo" type="kr.or.nko.research.model.AnswerVo"/>
+		<typeAlias alias="AttendVo" type="kr.or.nko.research.model.AttendVo"/>
+		<typeAlias alias="GiveAnnualVo" type="kr.or.nko.annual.model.GiveAnnualVo"/>
+		<typeAlias alias="UseAnnualVo" type="kr.or.nko.annual.model.UseAnnualVo"/>
+		<typeAlias alias="EmployeeContactManageVo" type="kr.or.nko.employeecontactmanage.model.EmployeeContactManageVo"/>
+		<typeAlias alias="ApprovalDivVo" type="kr.or.nko.approval.model.ApprovalDivVo"/>
+		<typeAlias alias="ApprovalEleVo" type="kr.or.nko.approval.model.ApprovalEleVo"/>
+		<typeAlias alias="ApprovalLineVo" type="kr.or.nko.approval.model.ApprovalLineVo"/>
+		<typeAlias alias="ApprovalRefVo" type="kr.or.nko.approval.model.ApprovalRefVo"/>
+		<typeAlias alias="ApprovalVo" type="kr.or.nko.approval.model.ApprovalVo"/>
+		<typeAlias alias="SignalVo" type="kr.or.nko.approval.model.SignalVo"/>
+		<typeAlias alias="CommuteVo" type="kr.or.nko.cmt.model.CmtVo"/>
+		<typeAlias alias="EmlFileVo" type="kr.or.nko.email.model.EmlFileVo"/>
+		<typeAlias alias="EmlManyVo" type="kr.or.nko.email.model.EmlManyVo"/>
+		<typeAlias alias="EmlReceiveVo" type="kr.or.nko.email.model.EmlReceiveVo"/>
+		<typeAlias alias="EmlSendVo" type="kr.or.nko.email.model.EmlSendVo"/>
+		<typeAlias alias="EmlTempFileVo" type="kr.or.nko.email.model.EmlTempFileVo"/>
+		<typeAlias alias="EmlTempVo" type="kr.or.nko.email.model.EmlTempVo"/>
+		<typeAlias alias="MessageManyVo" type="kr.or.nko.message.model.MessageManyVo"/>
+		<typeAlias alias="MessageReceiveVo" type="kr.or.nko.message.model.MessageReceiveVo"/>
+		<typeAlias alias="MessageSendVo" type="kr.or.nko.message.model.MessageSendVo"/>
+		<typeAlias alias="CertificateVo" type="kr.or.nko.certificate.model.CertificateVo"/>
+		<typeAlias alias="CertificateDivVo" type="kr.or.nko.certificate.model.CertificateDivVo"/>
+		<typeAlias alias="DataDatasVo" type="kr.or.nko.data.model.DataDatasVo"/>
+		<typeAlias alias="DataHisVo" type="kr.or.nko.data.model.DataHisVo"/>
+		<typeAlias alias="DataRpyVo" type="kr.or.nko.data.model.DataRpyVo"/>
+		<typeAlias alias="DataVo" type="kr.or.nko.data.model.DataVo"/>
+		<typeAlias alias="LogVo" type="kr.or.nko.log.model.LogVo"/>
+
+	</typeAliases>
+	
+	<mappers>
+		<mapper resource="kr/or/nko/config/db/mapper/callingcard.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/employee.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/authority.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/department.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/notice.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/todolist.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/schedule.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/work.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/research.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/question.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/answer.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/attend.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/reply.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/employeecontactmanage.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/approval.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/commute.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/email.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/annual.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/message.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/certificate.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/data.xml"/>
+		<mapper resource="kr/or/nko/config/db/mapper/log.xml"/>
+
+	</mappers>
+</configuration>

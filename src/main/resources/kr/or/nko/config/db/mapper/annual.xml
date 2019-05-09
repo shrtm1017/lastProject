@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="annual">
+
+	<insert id="insertAnnual" parameterType="GiveAnnualVo">
+		insert into give_annual
+		(anu_sq,anu_emp_sq,anu_give_dt,anu_days,anu_remains)
+		select
+		annual_seq.nextval,#{anu_emp_sq},#{anu_give_dt},#{anu_days},#{anu_remains}
+		from dual
+		where not exists(select anu_emp_sq from give_annual where
+		anu_emp_sq =
+		#{anu_emp_sq})
+	</insert>
+
+	<insert id="insertGiveAnnual" parameterType="GiveAnnualVo">
+		insert into
+		give_annual
+		(anu_sq,anu_emp_sq,anu_give_dt,anu_days,)
+		values
+		(annual_seq.nextval,
+		#{anu_emp_sq},
+		#{anu_give_dt},
+		#{anu_days},
+		#{anu_remains})
+
+
+	</insert>
+	<select id="getallAnnuaList" resultType="GiveAnnualVo"
+		parameterType="Map">
+		select *
+		from
+		(select a.* ,rownum rn
+		from
+		(select
+		give_annual.*
+		from give_annual
+		where anu_emp_sq = #{anu_emp_sq}
+		order by
+		anu_sq desc)
+		a ) a
+
+		where
+		rn between (#{page}-1) *
+		#{pageSize}+1 and
+		#{page}*#{pageSize}
+	</select>
+	<select id="SelectGiveday" resultType="double" parameterType="GiveAnnualVo">
+			select nvl(anu_remains,15) from give_annual right outer join dual
+		on anu_emp_sq = #{anu_emp_sq}
+        and anu_sq =#{anu_sq}
+	</select>
+	
+	<select id="SelectGiveYYYY" resultType="int" parameterType="int">
+	  select nvl(max(anu_sq),0) from give_annual 
+         where anu_emp_sq = #{anu_emp_sq}
+	</select>
+	
+	
+	<select id="AnnuaListCnt" resultType="int" parameterType="int">
+		select
+		count(*)
+		from give_annual
+		where anu_emp_sq = #{anu_emp_sq}
+	</select>
+
+	
+
+	<select id="insertList" resultType="GiveAnnualVo">
+		select *
+		from use_annual
+	</select>
+
+	<!-- 연차 사용 일수 조회 -->
+	<select id="selectUseAnu" resultType="double" parameterType="int">
+		select nvl(sum(anu_use), 0)
+		from use_annual
+		where anu_emp_sq =
+		#{anu_emp_sq}
+	</select>
+
+	<!-- 연차 지급 일수 조회 -->
+	<select id="selectGiveAnu" resultType="GiveAnnualVo"
+		parameterType="GiveAnnualVo">
+		select *
+		from give_annual
+		where anu_emp_sq = #{anu_emp_sq}
+		and anu_give_dt like #{anu_give_dt} || '%'
+	</select>
+	<!-- 사용내역 테이블 insert -->
+	<insert id="insert_UseAnnualDay" parameterType="UseAnnualVo">
+
+		insert
+		into
+		use_annual
+		(anu_sq,anu_emp_sq,anu_use,anu_str_dt,anu_end_dt,anu_div,anu_remain)
+
+		select
+		DISTINCT a2.apv_sq,a2.apv_executer ,
+		(select count(1) from
+		(
+		select fr_dt + level -1 from
+		(
+		select
+		trunc(to_date(apv_anu_str,'yyyy/mm/dd')) fr_dt,
+		trunc(to_date(apv_anu_end,'yyyy/mm/dd')) to_dt
+		from approval_ele
+		where
+		apv_sq =#{anu_sq}
+		)
+		where to_char(fr_dt + level -1,'d') != 7 and
+		to_char(fr_dt + level -1,'d')
+		!= 1
+		connect by level
+		<![CDATA[ <= to_dt - fr_dt + 1 ]]> 
+		
+		)) as anu_use,
+		a2.apv_anu_str,
+		a2.apv_anu_end,
+		a2.apv_anu_div,
+		TO_NUMBER(A2.anu_remains)-(select count(1) from
+		(
+		select fr_dt + level -1 from
+		(
+		select trunc(to_date(apv_anu_str,'yyyy/mm/dd')) fr_dt,
+		trunc(to_date(apv_anu_end,'yyyy/mm/dd')) to_dt
+		from approval_ele
+		where apv_sq =#{anu_sq}
+		)
+		where to_char(fr_dt + level -1,'d') != 7 and to_char(fr_dt + level -1,'d')
+		!= 1
+		connect by level
+		<![CDATA[ <= to_dt - fr_dt + 1 ]]> 
+		)) as day
+		from dual,
+		(SELECT b.apv_anu_str as
+		apv_anu_str , b.apv_anu_end as
+		apv_anu_end ,b.apv_executer,
+		b.apv_anu_div as apv_anu_div,
+		a.anu_remains,a.anu_emp_sq,b.apv_sq
+		from
+		give_annual a, approval_ele b ,
+		approval c
+		where
+		a.anu_emp_sq =
+		b.apv_executer
+		and
+		b.apv_sq = c.apv_sq
+		and
+		b.apv_anu_div = 1
+		and
+		b.apv_state = 3
+		and
+		b.apv_executer= #{anu_emp_sq}
+		and
+		b.apv_div_sq =1
+		and
+		b.apv_sq = #{anu_sq})A2
+		where not exists(select
+		anu_sq from use_annual
+		where anu_sq=#{anu_sq})
+
+	</insert>
+	<!-- 승인했는지에 대한 조회 -->
+	<select id="select_UseAnnualApv" resultType="int" parameterType="UseAnnualVo">
+		select count(*)
+		from give_annual a, approval_ele b , approval c
+		where
+		a.anu_emp_sq = b.apv_executer
+		and
+		b.apv_sq = c.apv_sq
+		and
+
+		apv_sign_chk = 1
+		and
+		b.apv_anu_div = #{anu_div}
+		and
+		b.apv_state = 2
+		and
+		b.apv_executer
+		=#{anu_emp_sq}
+		and
+		b.apv_div_sq =1
+		and
+		b.apv_sq = #{anu_sq}
+
+	</select>
+
+	<select id="Use_annualDayList" resultType="UseAnnualVo"
+		parameterType="Map">
+		select *
+		from
+		(select a.* ,rownum rn
+		from
+		(select
+		use_annual.*
+		from use_annual
+		where anu_emp_sq = #{anu_emp_sq}
+		order by
+		anu_sq desc)
+		a ) a
+
+		where
+		rn between (#{page}-1) *
+		#{pageSize}+1 and
+		#{page}*#{pageSize}
+	</select>
+	<select id="Use_AnnuaListCnt" resultType="int" parameterType="int">
+		select
+		count(*)
+		from use_annual
+		where anu_emp_sq = #{anu_emp_sq}
+	</select>
+	<insert id="insert_UseAnnualDay_bancha" parameterType="UseAnnualVo">
+
+		insert
+		into use_annual
+		(anu_sq,anu_emp_sq,anu_use,anu_str_dt,anu_end_dt,anu_div,anu_remain)
+
+		select
+		DISTINCT
+		a2.apv_sq,
+		a2.apv_executer,
+		0.5 as anu_use,
+		a2.apv_anu_str,
+		a2.apv_anu_end,
+		a2.apv_anu_div,
+		TO_NUMBER(A2.anu_remains)-0.5
+
+		from dual,
+		(SELECT b.apv_anu_str as
+		apv_anu_str , b.apv_anu_end as apv_anu_end ,
+		b.apv_anu_div as
+		apv_anu_div, a.anu_remains,b.apv_executer,b.apv_sq
+		from give_annual a,
+		approval_ele b , approval c
+		where
+		a.anu_emp_sq = b.apv_executer
+		and
+		b.apv_sq = c.apv_sq
+		and
+		b.apv_anu_div = 2
+		and
+		b.apv_state = 3
+		and
+		b.apv_executer= #{anu_emp_sq}
+		and
+		b.apv_div_sq =1
+		and
+		b.apv_sq =
+		#{anu_sq})A2
+
+		where not exists(select anu_sq from use_annual
+		where
+		anu_sq=#{anu_sq})
+	</insert>
+	<update id="Use_annual_Update" parameterType="UseAnnualVo">
+		update give_annual
+		set anu_remains= TO_NUMBER(anu_remains)-(select
+		anu_use from use_annual
+		where anu_sq=#{anu_sq})
+		where anu_emp_sq = #{anu_emp_sq}
+		and ( select
+		substr(anu_str_dt,1,4) from use_annual
+		where anu_emp_sq =#{anu_emp_sq}
+        and anu_sq =#{anu_sq})= (select to_char(sysdate, 'yyyy') from
+		dual )
+	</update>
+
+	<select id="select_UseEmpsq" resultType="int" parameterType="int">
+		select apv_executer from approval_ele where apv_sq=#{apv_sq}
+	</select>
+	<select id="selelct_anu_div" resultType="string" parameterType="int">
+		select apv_anu_div from approval_ele where apv_sq = #{apv_sq}
+	</select>
+
+
+</mapper> 

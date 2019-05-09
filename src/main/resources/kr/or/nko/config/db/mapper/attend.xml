@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="attend">
+
+	<insert id="insertAttend" parameterType="AttendVo">
+		insert into attend
+		values (#{att_que_sq}, #{att_ans_sq}, #{att_emp_sq})
+	</insert>
+	
+	<select id="selectAttend" resultType="AttendVo" parameterType="int">
+		select *
+		  from attend
+		 where att_emp_sq = #{att_emp_sq}
+	</select>
+
+	<delete id="deleteAttend" parameterType="int">
+		delete from attend
+		 where att_que_sq = #{att_que_sq}
+ 	</delete>
+ 	
+ 	<delete id="delAttendResubmit" parameterType="AttendVo">
+		delete from attend
+		 where att_que_sq = #{att_que_sq}
+		   and att_emp_sq = #{att_emp_sq}
+ 	</delete>
+	
+</mapper> 

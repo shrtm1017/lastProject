@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+ <mapper namespace="callingcard">
+ 
+ <!-- 명함 조회 -->
+ <select id="selectCallingCardPagingList" resultType="CallingCardVo" parameterType="PageVo">
+ 	select * 
+			from
+				(select a.* ,rownum rn
+					  from
+						(select calling_card.*
+						   from calling_card
+					   order by cal_sq) a ) a
+
+			where rn between (#{page}-1) * #{pageSize}+1 and #{page}*#{pageSize}
+ </select>
+ 
+ <!-- 명함 상세보기 -->
+ <select id="selectCallingCard" resultType="CallingCardVo" parameterType="Integer">
+ 	select * 
+ 	  from calling_card
+ 	where cal_sq = #{cal_sq}  
+ </select>
+ 
+ <!-- 명함 등록 -->
+ 
+ <insert id="insertCallingCard" parameterType="CallingCardVo">
+ 	insert into calling_card
+ 	  (cal_sq, cal_emp_sq, cal_nm, cal_phone, cal_com, cal_mail, cal_com_phone, cal_grade,cal_addr)
+ 	  values
+ 	  (calling_card_seq.nextval, #{cal_emp_sq}, #{cal_nm}, #{cal_phone}, 
+ 	   #{cal_com}, #{cal_mail}, #{cal_com_phone}, #{cal_grade}, #{cal_addr}
+ 	  )
+  </insert>
+ 
+ <!-- 명함 수정 -->
+ <update id="updateCallingCard" parameterType="CallingCardVo">
+ 	update calling_card
+ 	  set cal_emp_sq = #{cal_emp_sq},
+ 	      cal_nm = #{cal_nm},
+ 	      cal_phone = #{cal_phone},
+ 	      cal_com = #{cal_com},
+ 	      cal_mail = #{cal_mail},
+ 	      cal_com_phone = #{cal_com_phone},
+ 	      cal_grade = #{cal_grade},
+ 	      cal_addr = #{cal_addr}
+ 	 where cal_sq = #{cal_sq}
+ </update>
+ 
+ <!-- 명함 삭제 -->
+ <delete id="deleteCallingCard" parameterType="Integer">
+ 	delete from calling_card
+ 	 where cal_sq = #{cal_sq} 
+ </delete>
+ 
+ 
+ <!-- 전체 명함수 조회 -->
+ <select id="getCardCnt" resultType="Integer">
+ 	select count(*)
+ 	  from calling_card
+ </select>
+ 
+ 
+ <!-- 명함 검색 페이징  조회 -->
+	<select id="selectCallingCardPaging_Search" resultType="CallingCardVo" parameterType="map">
+		select *
+		from (select a.*, rownum rn
+				from (select calling_card.*
+						from calling_card
+						<where>
+							<if test="cal_nm != null and cal_nm != ''">
+								cal_nm like '%' || #{cal_nm} || '%'
+							</if>
+							<if test="cal_com != null and cal_com != ''">
+								or cal_com like '%' || #{cal_com} || '%'
+							</if>
+							<if test="cal_grade != null and cal_grade != ''">
+								or cal_grade like '%' || #{cal_grade} || '%'
+							</if>
+							<if test="authority != 1">
+								and cal_emp_sq = #{emp_sq}
+							</if>
+						</where>
+					order by cal_sq) a) a
+		where rn between (#{page}-1) * #{pageSize}+1 and #{page} * #{pageSize}
+	</select>
+ 
+ 		<!-- 조건검색 명함 수 조회 -->
+	<select id="getSearchCardCnt" resultType="int" parameterType="CallingCardVo">
+		select count(*)
+		from calling_card
+		<where>
+			<if test="cal_nm != null and cal_nm != ''">
+				cal_nm like '%' || #{cal_nm} || '%'
+			</if>
+			<if test="cal_com != null and cal_com != ''">
+				or cal_com like '%' || #{cal_com} || '%'
+			</if>
+			<if test="cal_grade != null and cal_grade != ''">
+				or cal_grade like '%' || #{cal_grade} || '%'
+			</if>
+		</where>
+	</select>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ </mapper> 

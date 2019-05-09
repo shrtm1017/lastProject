@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="answer">
+
+	<!-- 옵션 등록 -->
+	<insert id="insertAnswer" parameterType="AnswerVo">
+		insert into answer (ans_sq, ans_que_sq, ans_con, ans_peo)
+		values (answer_seq.nextval, #{ans_que_sq}, #{ans_con}, 0)
+	</insert>
+
+	<!-- 설문조사 상세 조회 : 옵션 목록 -->
+	<select id="selectAnswer" resultType="AnswerVo" parameterType="int">
+		select *
+		  from answer
+		 where ans_que_sq = #{ans_que_sq}
+		 order by ans_sq
+	</select>
+
+	<!-- 선택한 사원 수 변경 : 설문지 제출 -->
+	<update id="updatePeople" parameterType="int">
+		update answer
+		   set ans_peo = ans_peo + 1
+		 where ans_sq = #{ans_sq}
+	</update>
+	
+	<!-- 선택한 사원 수 변경 : 설문지 재제출 시 기존 데이터 삭제 -->
+	<update id="updPeopleResubmit" parameterType="int">
+		update answer
+		   set ans_peo = ans_peo - 1
+		 where ans_sq = #{ans_sq}
+	</update>
+
+	<!-- 설문조사 결과 조회 (백분율) -->
+	<select id="selectResult" resultType="AnswerVo">
+		select ans_que_sq,
+		       ans_con,
+		       ans_peo,
+		       ans_sq,
+		       round((RATIO_TO_REPORT(ans_peo) over (PARTITION BY ans_que_sq) * 100), 2) ans_cnt
+		  from answer
+		 order by ans_sq
+	</select>
+	
+	<!-- 옵션 삭제 -->
+	<delete id="deleteAnswer" parameterType="int">
+		delete from answer
+ 		 where ans_que_sq = #{ans_que_sq}
+ 	</delete>
+
+</mapper> 

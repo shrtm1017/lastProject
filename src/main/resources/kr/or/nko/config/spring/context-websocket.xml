@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<!-- 웹소켓 사용 -->
+	<bean id="vcWebSocket" class="kr.or.nko.vc.controller.VcWebSocket"/>
+	
+	<!-- 웹소켓 핸들러 -->
+	<websocket:handlers>
+		<websocket:mapping handler="vcWebSocket" path="/webSocketTest"/>
+		<!-- handshake-interceptors를 사용하면 httpsession에 담긴 정보를 핸들러에서 사용할수있음!!! -->
+		<websocket:handshake-interceptors>
+			<bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+		<websocket:sockjs/>
+	</websocket:handlers>
+	
+	<bean id="myHandler" class="kr.or.nko.login.WebSocketHandler"/>
+	
+    <websocket:handlers>
+        <websocket:mapping path="/count" handler="myHandler"/>
+        <websocket:handshake-interceptors>
+			<bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+        <websocket:sockjs/>
+    </websocket:handlers>
+	
+</beans>

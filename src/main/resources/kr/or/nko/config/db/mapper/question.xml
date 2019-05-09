@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="question">
+
+	<!-- 질문 등록 -->
+	<insert id="insertQuestion" parameterType="QuestionVo">
+		<selectKey keyProperty="que_sq" resultType="int" order="BEFORE">
+			select question_seq.nextval from dual
+		</selectKey>
+		
+		insert into question
+		values (#{que_sq}, #{que_res_sq}, #{que_con})
+	</insert>
+
+	<!-- 설문조사 상세 조회 : 질문 목록 -->
+	<select id="selectQuestion" resultType="QuestionVo" parameterType="int">
+		select *
+		  from question
+		 where que_res_sq = #{que_res_sq}
+		 order by que_sq
+	</select>
+	
+	<!-- 질문 삭제 -->
+	<delete id="deleteQuestion" parameterType="int">
+		delete from question
+	 	 where que_res_sq = #{que_res_sq}
+ 	</delete>
+ 	
+</mapper> 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="authority">
+
+	<!-- 권한조회 -->
+	<select id="selectAuth" resultType="AuthorityVo" parameterType="int">
+		select * from authority where aut_admin_sq=1 and aut_emp_sq=#{emp_sq}
+	</select>
+	
+</mapper> 

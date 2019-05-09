@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="approval">
+	
+	<resultMap id="apvForm" type="ApprovalDivVo">
+      <result property="div_apv_sq" column="div_apv_sq" />
+      <result property="div_apv_nm" column="div_apv_nm" />
+      <result property="div_apv_form" column="div_apv_form" jdbcType="CLOB" javaType="java.lang.String" />
+   	</resultMap>
+	
+	<select id="getAllApvEleList" resultType="ApprovalEleVo" parameterType="Map">
+		select *
+		  from
+		       (select a.*, rownum rn
+		          from (select *
+		                  from approval_ele
+		                 order by apv_sq desc) a) a
+		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+	</select>
+	
+	<select id="getAllApvEleCnt" resultType="int">
+		select count(*)
+          from approval_ele
+	</select>
+	
+	<select id="getAllApvDiv" resultType="ApprovalDivVo">
+		select div_apv_sq, div_apv_nm
+		  from approval_div
+		 order by div_apv_sq desc
+	</select>
+	
+	<select id="selectApvDiv" parameterType="int" resultMap="apvForm">
+		select *
+		  from approval_div
+		 where div_apv_sq = #{div_apv_sq}
+	</select>
+	
+	<!-- 결재라인 목록 : 결재자(1), 수신참조자(2) -->
+	<select id="getAllApvLine" parameterType="ApprovalLineVo" resultType="ApprovalLineVo">
+		select *
+		  from approval_line
+		 where apa_div_apv = #{apa_div_apv}
+		   and apa_code = #{apa_code}
+	</select>
+	
+	<insert id="insertApvEle" parameterType="ApprovalEleVo">
+		<selectKey keyProperty="apv_sq" resultType="int" order="BEFORE">
+			select approval_ele_seq.nextval from dual
+		</selectKey>
+		
+		insert into approval_ele
+		values (#{apv_sq}, #{apv_div_sq}, #{apv_emp_sq}, #{apv_nm}, #{apv_fl_path}, #{apv_fl_nm}, 
+				sysdate, '', sysdate, 0, '1', #{apv_depart}, #{apv_executer}, #{apv_con},
+				#{apv_anu_str}, #{apv_anu_end}, #{apv_anu_div})
+	</insert>
+	
+	<insert id="insertApv" parameterType="ApprovalVo">
+		insert into approval
+		values (#{apv_sq}, #{apv_sign}, '0', '', '')
+	</insert>
+	
+	<select id="getAllApv" parameterType="int" resultType="ApprovalVo">
+		select a.*
+		  from approval a, employee e
+		 where a.apv_sign = e.emp_sq
+		 order by e.emp_grade desc
+	</select>
+	
+	<select id="selectApvList" parameterType="int" resultType="ApprovalVo">
+		select *
+		  from approval
+		 where apv_sign = #{apv_sign}
+		 order by apv_sq desc
+	</select>
+		
+	<select id="selectApvEleList" parameterType="Map" resultType="ApprovalEleVo">
+		select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select *
+                          from approval_ele
+                         where apv_emp_sq = #{apv_emp_sq}
+                         order by apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+	</select>
+	
+	<select id="getApvEleCnt" resultType="int" parameterType="int">
+		select count(*)
+		  from approval_ele
+		 where apv_emp_sq = #{apv_emp_sq}
+	</select>
+	
+	<select id="selectApvEle" parameterType="int" resultType="ApprovalEleVo">
+		select *
+		  from approval_ele
+		 where apv_sq = #{apv_sq}
+	</select>
+	
+	<select id="select_SearchResult" resultType="map" parameterType="string">
+		select *
+		from employee a , department b
+		where a.emp_dpt = b.dpt_sq
+		  and a.emp_nm like '%' || #{emp_nm} || '%'
+	</select>
+	
+	<update id="updApvState" parameterType="ApprovalVo">
+		update approval
+		   set apv_sign_chk = #{apv_sign_chk}, apv_refu = nvl(#{apv_refu, jdbcType=VARCHAR}, apv_refu), apv_date = sysdate
+		 where apv_sq = #{apv_sq}
+		   and apv_sign = #{apv_sign}
+	</update>
+
+	<update id="updApvEleState" parameterType="ApprovalEleVo">
+		update approval_ele
+		   <set>
+		   		<if test="apv_state == 3 or apv_state == 4">
+		      		apv_end_dt = sysdate,
+		      	</if>
+		      	apv_state = #{apv_state}
+		    </set>
+		 where apv_sq = #{apv_sq}
+	</update>
+
+	<select id="selectApv" resultType="ApprovalVo" parameterType="ApprovalVo">
+		select *
+		  from approval
+		 where apv_sq = #{apv_sq}
+		   and apv_sign = #{apv_sign}
+	</select>
+	
+	<select id="getAllApvList" resultType="ApprovalVo" parameterType="ApprovalVo">
+		select a.*
+		  from approval a, employee e
+		 where a.apv_sq = #{apv_sq}
+           and a.apv_sign = e.emp_sq
+         order by e.emp_grade desc
+ 	</select>
+ 	
+ 	<!-- 내가 받은 결재 - 기안일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvStartDate" resultType="ApprovalEleVo" parameterType="Map">
+	 	select b.*
+		  from approval a, approval_ele b
+			<where>
+				a.apv_sign = #{apv_sign}
+				and a.apv_sq = b.apv_sq
+				
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+					and b.apv_dt 
+		       		between to_date(#{start_date}, 'YYYY-MM-DD') 
+		       			and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="apv_sign_chk != null">
+					and a.apv_sign_chk = #{apv_sign_chk}
+				</if>
+				<if test="apv_div_sq != null and apv_div_sq != 0">
+					and b.apv_div_sq = #{apv_div_sq}
+				</if>
+				<if test="apv_nm != null">
+					and b.apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+			</where>
+		 order by b.apv_sq desc
+ 	</select>
+ 	
+ 	<!-- 내가 받은 결재 - 결재일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvSignDate" resultType="ApprovalEleVo" parameterType="Map">
+	 	select b.*
+		  from approval a, approval_ele b
+			<where>
+				a.apv_sign = #{apv_sign}
+				and a.apv_sq = b.apv_sq
+				
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+					and a.apv_date 
+		       		between to_date(#{start_date}, 'YYYY-MM-DD') 
+		       			and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="apv_sign_chk != null">
+					and a.apv_sign_chk = #{apv_sign_chk}
+				</if>
+				<if test="apv_div_sq != null and apv_div_sq != 0">
+					and b.apv_div_sq = #{apv_div_sq}
+				</if>
+				<if test="apv_nm != null">
+					and b.apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+			</where>
+		 order by b.apv_sq desc
+ 	</select>
+ 	
+ 	<!-- 수신참조자 조회 -->
+ 	<select id="selectReference" resultType="EmployeeVo" parameterType="int">
+	 	select b.*
+		  from approval_line a, employee b
+		 where a.apa_div_apv = #{apa_div_apv}
+		   and a.apa_code = '2'
+		   and a.apa_emp = b.emp_sq
+ 	</select>
+ 	
+	<!-- 수신참조자 테이블에 데이터 추가 -->
+	<insert id="insertApvRef" parameterType="ApprovalRefVo">
+		insert into approval_ref
+		values (#{apr_sq}, #{apr_emp_sq}, '0')
+	</insert>
+
+	<!-- 수신참조자 테이블 전체 조회 -->
+	<select id="getAllApvRef" resultType="ApprovalRefVo">
+		select *
+		  from approval_ref
+	</select>
+	
+	<!-- 수신참조자 사원 정보 조회 -->
+	<select id="selectApvRefEmp" resultType="EmployeeVo" parameterType="int">
+		select b.*
+		  from approval_ref a, employee b
+		 where a.apr_sq = #{apr_sq}
+		   and a.apr_emp_sq = b.emp_sq
+		 order by b.emp_sq
+	</select>
+	
+	<!-- 내가 받은 참조문서 조회 -->
+	<select id="selectApvRef" resultType="ApprovalEleVo" parameterType="Map">
+        select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select b.*
+						  from approval_ref a, approval_ele b
+						 where a.apr_emp_sq = #{apr_emp_sq}
+						   and a.apr_sq = b.apv_sq
+				         order by b.apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+	</select>
+	
+	<!-- 내가 받은 참조문서 count 조회 -->
+	<select id="getApvRefCnt" resultType="int" parameterType="int">
+		select count(*)
+          from approval_ref a, approval_ele b
+         where a.apr_emp_sq = #{apr_emp_sq}
+           and a.apr_sq = b.apv_sq
+	</select>
+	
+	<!-- 참조문서함 - 기안일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvRefStartDate" resultType="ApprovalEleVo" parameterType="Map">
+ 	 	select *
+	  	  from
+		       (select c.*, rownum rn
+		          from (select a.*
+						  from approval_ele a, approval_ref b
+						<where>
+						        b.apr_emp_sq = #{apr_emp_sq}
+								and a.apv_sq = b.apr_sq
+								
+								<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+									and a.apv_dt
+						            between to_date(#{start_date}, 'YYYY-MM-DD') 
+						                and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+						        </if>
+						        <if test="apv_state != null">
+						 			and a.apv_state = #{apv_state}
+						 		</if>
+						 		<if test="apv_div_sq != null and apv_div_sq != 0">
+						        	and a.apv_div_sq = #{apv_div_sq}
+						        </if>
+						        <if test="apv_nm != null">
+									and a.apv_nm like '%' || #{apv_nm} || '%'
+								</if>
+						</where>
+						 order by a.apv_sq desc) c) c
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 참조문서함 - 결재종료일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvRefEndDate" resultType="ApprovalEleVo" parameterType="Map">
+ 	 	select *
+	  	  from
+		       (select c.*, rownum rn
+		          from (select a.*
+						  from approval_ele a, approval_ref b
+						<where>
+						        b.apr_emp_sq = #{apr_emp_sq}
+								and a.apv_sq = b.apr_sq
+								
+								<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+									and a.apv_end_dt
+						            between to_date(#{start_date}, 'YYYY-MM-DD') 
+						                and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+						        </if>
+						        <if test="apv_state != null">
+						 			and a.apv_state = #{apv_state}
+						 		</if>
+						 		<if test="apv_div_sq != null and apv_div_sq != 0">
+						        	and a.apv_div_sq = #{apv_div_sq}
+						        </if>
+						        <if test="apv_nm != null">
+									and a.apv_nm like '%' || #{apv_nm} || '%'
+								</if>
+						</where>
+						 order by a.apv_sq desc) c) c
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 참조문서함 검색 count - 기안일 -->
+	<select id="getApvRefCntStartDate" resultType="int" parameterType="map">
+		select count(*)
+		  from approval_ele a, approval_ref b
+		<where>
+		        b.apr_emp_sq = #{apr_emp_sq}
+				and a.apv_sq = b.apr_sq
+				
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+					and a.apv_end_dt
+		            between to_date(#{start_date}, 'YYYY-MM-DD') 
+		                and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+		        </if>
+		        <if test="apv_state != null">
+		 			and a.apv_state = #{apv_state}
+		 		</if>
+		 		<if test="apv_div_sq != null and apv_div_sq != 0">
+		        	and a.apv_div_sq = #{apv_div_sq}
+		        </if>
+		        <if test="apv_nm != null">
+					and a.apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+		</where>
+	</select>
+	
+	<!-- 참조문서함 검색 count - 결재종료일 -->
+	<select id="getApvRefCntEndDate" resultType="int" parameterType="map">
+		select count(*)
+		  from approval_ele a, approval_ref b
+		<where>
+		        b.apr_emp_sq = #{apr_emp_sq}
+				and a.apv_sq = b.apr_sq
+				
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+					and a.apv_end_dt
+		            between to_date(#{start_date}, 'YYYY-MM-DD') 
+		                and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+		        </if>
+		        <if test="apv_state != null">
+		 			and a.apv_state = #{apv_state}
+		 		</if>
+		 		<if test="apv_div_sq != null and apv_div_sq != 0">
+		        	and a.apv_div_sq = #{apv_div_sq}
+		        </if>
+		        <if test="apv_nm != null">
+					and a.apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+		</where>
+	</select>
+ 	
+ 	<!-- 참조문서함 - 문서 조회 여부 업데이트 -->
+ 	<update id="updateApvRefHit" parameterType="ApprovalRefVo">
+ 		update approval_ref
+		   set apr_hit = '1'
+		 where apr_sq = #{apr_sq}
+		   and apr_emp_sq = #{apr_emp_sq}
+		   and apr_hit = '0'
+ 	</update>
+ 	
+ 	<!-- 내가 올린 결재 - 기안일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvEleStartDate" resultType="ApprovalEleVo" parameterType="map">
+ 		select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select *
+						  from approval_ele
+						<where>
+								apv_emp_sq = #{apv_emp_sq}
+						 
+								<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+							   		and apv_dt
+							       	between to_date(#{start_date}, 'YYYY-MM-DD') 
+							            and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+								</if>
+								<if test="apv_state != null">
+									and apv_state = #{apv_state}
+								</if>
+								<if test="apv_div_sq != null and apv_div_sq != 0">
+									and apv_div_sq = #{apv_div_sq}
+								</if>
+								<if test="apv_nm != null">
+									and apv_nm like '%' || #{apv_nm} || '%'
+								</if>
+						</where>
+						 order by apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	
+	<!-- 내가 올린 결재 - 결재종료일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchApvEleEndDate" resultType="ApprovalEleVo" parameterType="map">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select *
+						  from approval_ele
+						<where>
+								apv_emp_sq = #{apv_emp_sq}
+						 
+								<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+							   		and apv_end_dt
+							       	between to_date(#{start_date}, 'YYYY-MM-DD') 
+							            and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+								</if>
+								<if test="apv_state != null">
+									and apv_state = #{apv_state}
+								</if>
+								<if test="apv_div_sq != null and apv_div_sq != 0">
+									and apv_div_sq = #{apv_div_sq}
+								</if>
+								<if test="apv_nm != null">
+									and apv_nm like '%' || #{apv_nm} || '%'
+								</if>
+						</where>
+						 order by apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	
+	<!-- 내가 올린 결재 검색 count - 기안일 -->
+	<select id="getApvEleCntStartDate" resultType="int" parameterType="map">
+		select count(*)
+		  from approval_ele
+		<where>
+				apv_emp_sq = #{apv_emp_sq}
+		 
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+			   		and apv_dt
+			       	between to_date(#{start_date}, 'YYYY-MM-DD') 
+			            and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="apv_state != null">
+					and apv_state = #{apv_state}
+				</if>
+				<if test="apv_div_sq != null and apv_div_sq != 0">
+					and apv_div_sq = #{apv_div_sq}
+				</if>
+				<if test="apv_nm != null">
+					and apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+		</where>
+	</select>
+	
+	<!-- 내가 올린 결재 검색 count - 결재종료일 -->
+	<select id="getApvEleCntEndDate" resultType="int" parameterType="map">
+		select count(*)
+		  from approval_ele
+		<where>
+				apv_emp_sq = #{apv_emp_sq}
+		 
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+			   		and apv_end_dt
+			       	between to_date(#{start_date}, 'YYYY-MM-DD') 
+			            and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="apv_state != null">
+					and apv_state = #{apv_state}
+				</if>
+				<if test="apv_div_sq != null and apv_div_sq != 0">
+					and apv_div_sq = #{apv_div_sq}
+				</if>
+				<if test="apv_nm != null">
+					and apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+		</where>
+	</select>
+	
+	<!-- 알림 등록 -->
+	<insert id="insertSignal" parameterType="SignalVo">
+		insert into signal
+		values (signal_seq.nextval, #{sig_apv_sq}, #{sig_emp_sq}, #{sig_con}, #{sig_div})
+	</insert>
+	
+	<!-- 알림 삭제 -->
+	<delete id="deleteSignal" parameterType="int">
+		delete from signal
+		 where sig_sq = #{sig_sq}
+	</delete>
+	
+	<!-- 알림 조회 -->
+	<select id="selectSignal" resultType="SignalVo" parameterType="int">
+		select *
+		  from signal
+		 where sig_emp_sq = #{sig_emp_sq}
+		 order by sig_sq desc
+	</select>
+	
+	<!-- 특정 알림 조회 -->
+	<select id="selectSignalSq" resultType="SignalVo" parameterType="int">
+		select *
+		  from signal
+		 where sig_sq = #{sig_sq}
+	</select>
+	
+	<!-- 결재라인 조회 (결재구분번호를 받아서) -->
+ 	<select id="selectAllApvLine" resultType="ApprovalLineVo" parameterType="int">
+	 		select *
+			from employee a , approval_line b
+			where a.emp_sq = B.APA_EMP
+			and B.APA_DIV_APV = #{apa_div_apv}
+ 	</select>
+
+	<!-- 결재라인 추가 -->
+	<insert id="insertApvLine" parameterType="ApprovalLineVo">
+		insert into approval_line
+		values (approval_line_seq.nextval, #{apa_div_apv} , #{apa_emp} , #{apa_code})
+	</insert>
+	
+	<!-- 결재라인 수정 -->
+	<update id="updateApvLine" parameterType="ApprovalLineVo">
+		update approval_line
+		set apa_emp = #{apa_emp} , apa_code = #{apa_code}
+		where apa_div_apv = #{div_apv}
+		and apa_sq = #{apa_sq}
+	</update>
+	
+	<!-- 결재라인 삭제 -->
+	<delete id="deleteApvLine" parameterType="int">
+		delete 
+		from approval_line
+		where apa_div_apv = #{apa_div_apv}
+	</delete>
+	
+	<!-- 전체 문서함 - 기안일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchAllApvEleStartDate" resultType="ApprovalEleVo" parameterType="map">
+ 	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select *
+                          from approval_ele
+                        <where>
+                                <if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+                                    apv_dt
+                                    between to_date(#{start_date}, 'YYYY-MM-DD') 
+                                        and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                                </if>
+                                <if test="apv_state != null">
+                                    and apv_state = #{apv_state}
+                                </if>
+                                <if test="apv_div_sq != null and apv_div_sq != 0">
+                                    and apv_div_sq = #{apv_div_sq}
+                                </if>
+                                <if test="apv_nm != null">
+                                    and apv_nm like '%' || #{apv_nm} || '%'
+                                </if>
+                        </where>
+                         order by apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	
+	<!-- 전체 문서함 - 결재종료일, 결재상태, 문서분류, 문서명 검색 -->
+ 	<select id="searchAllApvEleEndDate" resultType="ApprovalEleVo" parameterType="map">
+		select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select *
+                          from approval_ele
+                        <where>
+                                <if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+                                    apv_end_dt
+                                    between to_date(#{start_date}, 'YYYY-MM-DD') 
+                                        and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                                </if>
+                                <if test="apv_state != null">
+                                    and apv_state = #{apv_state}
+                                </if>
+                                <if test="apv_div_sq != null and apv_div_sq != 0">
+                                    and apv_div_sq = #{apv_div_sq}
+                                </if>
+                                <if test="apv_nm != null">
+                                    and apv_nm like '%' || #{apv_nm} || '%'
+                                </if>
+                        </where>
+                         order by apv_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+	<!-- 전체 문서함 - 기안일 검색 count -->
+	<select id="searchAllApvEleCntStartDate" resultType="int" parameterType="map">
+		select count(*)
+          from approval_ele
+        <where>
+                <if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+                    apv_dt
+                    between to_date(#{start_date}, 'YYYY-MM-DD') 
+                        and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                </if>
+                <if test="apv_state != null">
+                    and apv_state = #{apv_state}
+                </if>
+                <if test="apv_div_sq != null and apv_div_sq != 0">
+                    and apv_div_sq = #{apv_div_sq}
+                </if>
+                <if test="apv_nm != null">
+                    and apv_nm like '%' || #{apv_nm} || '%'
+                </if>
+        </where>
+	</select>
+	
+	<!-- 전체 문서함 - 결재종료일 검색 count -->
+	<select id="searchAllApvEleCntEndDate" resultType="int" parameterType="map">
+		select count(*)
+		  from approval_ele
+		<where>
+				<if test="start_date != null and start_date != '' and end_date != null and end_date != ''">
+			   		apv_end_dt
+			       	between to_date(#{start_date}, 'YYYY-MM-DD') 
+			            and to_date(#{end_date} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+				</if>
+				<if test="apv_state != null">
+					and apv_state = #{apv_state}
+				</if>
+				<if test="apv_div_sq != null and apv_div_sq != 0">
+					and apv_div_sq = #{apv_div_sq}
+				</if>
+				<if test="apv_nm != null">
+					and apv_nm like '%' || #{apv_nm} || '%'
+				</if>
+		</where>
+	</select>
+
+	<!-- 부서에 속한 직원 조회 -->
+	<select id="selectEmpAllList" resultType="EmployeeVo" parameterType="int">
+			select *
+			  from employee a, department b
+			 where a.emp_dpt = B.DPT_SQ
+			   and B.DPT_HR_SQ = #{hr_sq}
+	</select>
+	
+	<!-- 내가 받은 결재 목록 -->
+	<select id="selectSignList" resultType="ApprovalEleVo" parameterType="int">
+		select b.*
+		  from approval a, approval_ele b
+		 where a.apv_sign = #{apv_sign}
+		   and a.apv_sq = b.apv_sq
+		 order by b.apv_sq desc
+	</select>
+	
+	<!-- 내가 받은 결재 문서 - 수신참조자 목록 -->
+	<select id="selectSignListRef" resultType="ApprovalRefVo" parameterType="int">
+		select c.*
+		  from approval a, approval_ele b, approval_ref c
+		 where a.apv_sign = #{apv_sign}
+		   and a.apv_sq = b.apv_sq
+		   and b.apv_sq = c.apr_sq
+	</select>
+	
+	<!-- 문서별 수신참조자 정보 : 사원번호순 -->
+	<select id="getApvRef" resultType="ApprovalRefVo" parameterType="int">
+		select *
+		  from approval_ref
+		 where apr_sq = #{apr_sq}
+		 order by apr_emp_sq
+	</select>
+	
+	<select id="getAllApvEmpList" resultType="EmployeeVo" parameterType="int">
+		select e.*
+		  from approval a, employee e
+		 where a.apv_sq = #{apv_sq}
+		   and a.apv_sign = e.emp_sq
+		 order by e.emp_grade desc
+	</select>
+	
+	<select id="getApvStateCnt" resultType="int" parameterType="ApprovalEleVo">
+		select count(*)
+		  from approval_ele
+		 where apv_emp_sq = #{apv_emp_sq}
+		   and apv_state = #{apv_state}
+	</select>
+	
+</mapper>

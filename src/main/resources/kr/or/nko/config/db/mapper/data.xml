@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="data">
+	
+	<insert id="insertData" parameterType="DataVo">
+		insert into datas values(DATA_SEQ.NEXTVAL,#{data_emp_sq},#{data_nm},'내용',0,sysdate,sysdate,#{data_man})
+	</insert>
+	
+	<insert id="insertDataFile" parameterType="DataDatasVo">
+		insert into data_datas values(DATA_SEQ.CURRVAL,#{data_fl_nm},#{data_fl_path},#{data_fl_norenm},#{data_fl_size})
+	</insert>
+	
+	<select id="selectData" parameterType="String" resultType="DataVo">
+		select * from datas
+		order by DATA_DT desc
+	</select>
+	
+	<select id="selectDataDatas" parameterType="String" resultType="DataDatasVo">
+		select * from data_datas
+		where data_sq = #{sss}
+	</select>
+	
+	<insert id="insetDataHis" parameterType="DataHisVo">
+		insert into data_his values(#{data_sq},#{data_emp_sq},sysdate,#{data_nm})
+	</insert>
+	
+	<select id="selectDataHis" parameterType="String" resultType="DataHisVo">
+		select * from data_his where DATA_SQ = #{sss}
+	</select>
+	
+	<select id="searchEmp" parameterType="String" resultType="EmployeeVo">
+		select * from employee where emp_nm = #{sss}
+	</select>
+	
+	<delete id="delHisData" parameterType="String">
+	 	delete from data_his where DATA_SQ = #{sss}
+	</delete>
+	
+	<delete id="delDatas" parameterType="String">
+		delete from data_datas where DATA_SQ = #{sss}
+	</delete>
+	
+	<delete id="delData" parameterType="String">
+		delete from datas where DATA_SQ = #{sss}
+	</delete>
+	
+ 	<!-- 설문조사 페이징 리스트 조회 -->
+ 	<select id="selectPaging" resultType="DataVo" parameterType="PageVo">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select datas.*
+		                  from datas
+		                 order by data_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 설문조사 페이징 리스트 조회 -->
+ 	<select id="selectSearchPaging" resultType="DataVo" parameterType="PageVo">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select datas.*
+		                  from datas
+		                 where DATA_man= #{data_man}
+						 or DATA_nm like '%' || #{data_nm} || '%'
+		                 order by data_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 전체 게시글 수 조회 -->
+	<select id="getDatasCnt" resultType="Integer">
+    	select count(*)
+	  	  from datas
+	</select>
+	 	
+ 	<!-- data 검색 -->
+	<select id="getDataCntSearch" resultType="Integer" parameterType="PageVo">
+    	select count(*)
+	  	  from datas
+	  	  where DATA_man = #{data_man}
+		  or DATA_nm like '%' || #{data_nm} || '%'
+		
+	</select>
+	
+	<select id="searchWantData" resultType="DataVo" parameterType="String">
+		select * from datas
+		where DATA_man = #{data_man}
+		or DATA_nm like '%' || #{data_nm} || '%'
+		order by data_dt desc
+	</select>
+	
+</mapper> 

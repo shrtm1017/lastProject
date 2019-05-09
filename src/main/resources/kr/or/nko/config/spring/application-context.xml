@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- @Service, @Repository 어노테이션 적용된 클래스를 스캔 -->
+	<context:annotation-config/>
+	
+	<!-- @Controller, @Service, @Repository, @Component를 스캔 -->
+	<context:component-scan base-package="kr.or.nko" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	
+	<task:scheduler id="scheduler"/>
+	<task:executor id="executor"/>
+	
+	<bean id="researchController" class="kr.or.nko.research.controller.ResearchController"/>
+	<bean id="annualController" class="kr.or.nko.annual.controller.AnnualController"/>
+	
+	<bean id="emailController" class="kr.or.nko.email.controller.EmailController"/>
+
+	<!-- @Scheduled 어노테이션을 찾아서 실행 -->
+	<task:annotation-driven scheduler="scheduler" executor="executor"/>
+	
+</beans>

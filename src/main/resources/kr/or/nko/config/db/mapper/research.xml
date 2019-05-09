@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="research">
+
+	<!-- 설문지 등록 -->
+	<insert id="insertResearch" parameterType="ResearchVo">
+		<selectKey keyProperty="res_sq" resultType="int" order="BEFORE">
+			select research_seq.nextval from dual
+		</selectKey>
+		
+		insert into research
+		values (#{res_sq}, #{res_emp_sq}, #{res_nm}, null, sysdate, #{res_end_dt}, '1', 0)
+	</insert>
+	
+	<update id="updateResearch" parameterType="ResearchVo">
+		update research
+		   set res_nm = #{res_nm},
+		       res_end_dt = #{res_end_dt}
+		 where res_sq = #{res_sq}
+	</update>
+	
+	<!-- 전체 설문조사 목록 조회 -->
+	<select id="getAllResearch" resultType="ResearchVo">
+		select *
+		  from research
+		 order by res_sq desc
+	</select>
+	
+	<!-- 설문조사 상세 조회 -->
+	<select id="selectResearch" resultType="ResearchVo" parameterType="int">
+		select *
+		  from research
+		 where res_sq = #{res_sq}
+	</select>
+	
+	<!-- 조회수 업데이트 -->
+	<update id="updateHits" parameterType="int">
+		update research
+		   set res_hit = res_hit + 1
+		 where res_sq = #{res_sq}
+	</update>
+	
+	<!-- 설문지 삭제 -->
+	<delete id="deleteResearch" parameterType="int">
+		delete from research
+	 	 where res_sq = #{res_sq}
+ 	</delete>
+ 	
+ 	<!-- 설문조사 페이징 리스트 조회 -->
+ 	<select id="selectResearchPaging" resultType="ResearchVo" parameterType="PageVo">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select research.*
+		                  from research
+		                 order by res_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 설문조사 검색 -->
+ 	<select id="selectResearchPagingSearch" resultType="ResearchVo" parameterType="PageVo">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select research.*
+		                  from research
+		                <where>
+							<if test="res_nm != null and res_nm != ''">
+								res_nm like '%' || #{res_nm} || '%'
+							</if>
+							<if test="res_state != null and res_state != ''">
+								or res_state = #{res_state}
+							</if>
+						</where>
+		                 order by res_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+ 	
+ 	<!-- 설문조사 전체 게시글 수 조회 -->
+	<select id="getResearchCnt" resultType="Integer">
+    	select count(*)
+	  	  from research
+	</select>
+	 	
+ 	<!-- 설문조사 검색 -->
+	<select id="getResearchCntSearch" resultType="Integer" parameterType="PageVo">
+    	select count(*)
+	  	  from research
+		<where>
+			<if test="res_nm != null and res_nm != ''">
+				res_nm like '%' || #{res_nm} || '%'
+			</if>
+			<if test="res_state != null and res_state != ''">
+				or res_state = #{res_state}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 설문조사 마감 : 상태 변경 -->
+	<update id="updateResearchState" parameterType="Integer">
+		update research
+		   set res_state = '0'
+		 where res_sq = #{res_sq}
+	</update>
+	
+	<!-- 진행 중인 설문 : 상위 5개 -->
+	<select id="getOngoingResearch" resultType="ResearchVo">
+		select *
+		  from research
+		 where res_state = 1
+		   and rownum &lt;= 5
+		 order by res_sq desc
+	</select>
+</mapper> 

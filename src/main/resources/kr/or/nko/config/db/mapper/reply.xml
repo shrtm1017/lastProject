@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="reply">
+
+	<select id="Ntc_replyCnt" resultType="integer" parameterType="int">
+		select count(*)
+		from reply
+		where rpy_ntc_sq=#{rpy_ntc_sq}
+	</select>
+
+	<!-- 댓글 등록 -->
+	<insert id="reply_Register" parameterType="ReplyVo">
+		<selectKey keyProperty="rpy_sq" resultType="int" order="BEFORE">
+			select reply_seq.nextval from dual
+		</selectKey>
+		insert into reply (rpy_sq, rpy_ntc_sq, rpy_emp_sq, rpy_con, rpy_dt,
+		rpy_fnl_mod, rpy_parent_sq, rpy_level, rpy_del_if)
+		values
+		(reply_seq.currval,
+		 #{rpy_ntc_sq},
+		  #{rpy_emp_sq},
+		   #{rpy_con},
+		 sysdate,
+		  sysdate,
+		   #{rpy_parent_sq,jdbcType=VARCHAR},
+		#{rpy_level,jdbcType=VARCHAR},
+		nvl(#{rpy_del_if,jdbcType=VARCHAR},'u')
+		)
+	</insert>
+
+	<select id="selectNotice" resultType="NoticeVo" parameterType="int">
+		select * from notice where ntc_sq = #{ntc_sq}
+	</select>
+	<!-- <insert id="insertNotice" parameterType="boardVo"> -->
+	<!-- insert into board (board_no,board_title,board_check) -->
+	<!-- values (board_seq.nextval,#{board_title,jdbcType=VARCHAR}, -->
+	<!-- #{board_check,jdbcType=VARCHAR}) -->
+	<!-- </insert> -->
+	<delete id="deleteNotice" parameterType="NoticeVo">
+		delete from notice where
+		ntc_sq=#{ntc_sq}
+	</delete>
+	<update id="updateNotice" parameterType="NoticeVo">
+		update notice set
+		ntc_nm=nvl(#{ntc_nm},ntc_nm),
+		ntc_con=nvl(#{ntc_con},ntc_con),
+		ntc_fl_nm=#{ntc_fl_nm,jdbcType=VARCHAR},
+		ntc_fl_path=nvl(#{ntc_fl_path,jdbcType=VARCHAR},ntc_fl_path)
+
+		where
+		ntc_sq=#{ntc_sq}
+	</update>
+
+	<!-- 선택한 게시글에 대한 댓글 리스트 -->
+	<select id="select_reply_List" resultType="ReplyVo"
+		parameterType="Map">
+		select rpy_sq,rpy_parent_sq,lpad('└  ',5*(level-1)) ||
+		rpy_con as rpy_con,
+		rpy_level,rpy_emp_sq,rpy_dt,rpy_del_if
+		from(select *
+		from (select a.*, rownum rn
+		from (select reply.*
+		from reply
+		order by rpy_sq desc)a)a
+
+		where rn between (#{page}-1) * #{pageSize}+1
+		and #{page} * #{pageSize})
+		where rpy_ntc_sq=#{rpy_ntc_sq}
+
+		start with
+		rpy_parent_sq is null
+		connect by prior rpy_sq = rpy_parent_sq
+		order
+		siblings by rpy_sq desc
+
+
+	</select>
+	<!-- 계층형으로 조회한뒤 조회한 레벨을 업데이트 -->
+	<update id="updateLevel" parameterType="ReplyVo">
+		update reply set
+		rpy_level=#{rpy_level}
+		where rpy_ntc_sq=#{rpy_ntc_sq}
+		and rpy_sq=#{rpy_sq}
+		<!-- and bulletin_no=#{bulletin_no} -->
+	</update>
+		<update id="delete_reply" parameterType="ReplyVo">
+		update reply set
+		rpy_del_if=#{rpy_del_if}
+		where rpy_sq=#{rpy_sq}
+		<!-- and bulletin_no=#{bulletin_no} -->
+	</update>
+	<!-- 댓글 전체를 계층형으로 조회 -->
+	<select id="reply_AllList" resultType="ReplyVo" parameterType="Integer">
+		select /*+ INDEX(reply pk_rpy_sq)*/ rpy_sq, rpy_parent_sq,
+		lpad(' ', 5*(level-1)) || rpy_con as rpy_con,
+		level as rpy_level,rpy_ntc_sq,rpy_emp_sq, rpy_dt
+		from reply
+		where rpy_ntc_sq= #{rpy_ntc_sq}
+		start with rpy_parent_sq is null
+		connect by prior rpy_sq = rpy_parent_sq 
+	</select>
+	<delete id="clear_reply" parameterType="Integer">
+		delete from reply
+		where rpy_ntc_sq=#{rpy_ntc_sq}
+	</delete>
+	
+
+
+
+</mapper>

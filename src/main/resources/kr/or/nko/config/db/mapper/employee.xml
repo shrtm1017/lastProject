@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="employee">
+
+	<!-- 패스워드 암호화 -->
+	<update id="encrytPass" parameterType="EmployeeVo">
+		update employee set emp_pass=#{emp_pass}
+		where emp_sq=#{emp_sq}
+	</update>
+
+	<!-- 회원 조회 -->
+	<select id="selectEmployee" resultType="EmployeeVo" parameterType="int">
+		select * from employee where emp_sq = #{emp_sq}
+	</select>
+	
+	<!-- 회원 정보 수정 : 회원 -->
+	<update id="updateEmployee" parameterType="EmployeeVo">
+		update employee
+		   set emp_pass = #{emp_pass},
+		       emp_phone = #{emp_phone},
+		       emp_addr1 = #{emp_addr1},
+		       emp_addr2 = #{emp_addr2},
+		       emp_psn_email = #{emp_psn_email},
+		       emp_img_path = nvl(#{emp_img_path, jdbcType=VARCHAR}, emp_img_path),
+		       emp_img_realpath = nvl(#{emp_img_realpath, jdbcType=VARCHAR}, emp_img_realpath),
+		       emp_fnl_mod = sysdate
+		 where emp_sq = #{emp_sq}
+	</update>
+	
+	<!-- 회원 정보 수정 : 관리자 -->
+	<update id="updateManage" parameterType="EmployeeVo">
+		update employee
+		   set emp_dpt = #{emp_dpt},
+		   	   emp_grade = #{emp_grade},
+		   	   emp_phone = #{emp_phone},
+		       emp_addr1 = #{emp_addr1},
+		       emp_addr2 = #{emp_addr2},
+		       emp_com_email = #{emp_com_email},
+		       emp_psn_email = #{emp_psn_email},
+		       emp_img_path = nvl(#{emp_img_path, jdbcType=VARCHAR}, emp_img_path),
+		       emp_img_realpath = nvl(#{emp_img_realpath, jdbcType=VARCHAR}, emp_img_realpath),
+		       emp_fnl_mod = sysdate
+		 where emp_sq = #{emp_sq}
+	</update>
+	
+	<!-- 전체 회원 조회 -->
+	<select id="selectAllList" resultType="EmployeeVo">
+		select * from employee
+	</select>
+	
+	<!-- 사원 조회(이름, 사원번호, 부서명에 따라서), 이메일 검색도 추가 -->
+	<select id="selectListSearch" resultType="EmployeeVo" parameterType="EmployeeVo">
+		select * 
+		from employee
+		<!-- 
+			select * from employee where or emp_sq like '%' || #{emp_sq} || '%'
+			이런식으로 될경우 문법엔 맞지 않지만 mybatis에서 자동으로 삭제해줌
+		 -->
+		<where>
+			<if test="emp_nm != null and emp_nm != ''">
+				emp_nm like '%' || #{emp_nm} || '%'
+			</if>
+			<if test="emp_sq != null and emp_sq != 0">
+				or emp_sq like '%' || #{emp_sq} || '%'
+			</if>
+			<if test="emp_dpt != null and emp_dpt != 0">
+				or emp_dpt = #{emp_dpt} <!-- 부서명으로 부서번호를 먼저 조회후 조회되어 부서번호로 조회하기때문에 like를 쓰지않음 -->
+			</if>
+			<if test="emp_com_email != null and emp_com_email != ''">
+				or emp_com_email like '%' || #{emp_com_email} || '%'
+			</if>
+		</where>
+		order by 1
+	</select>
+	
+	<!-- 전체 사원수 조회 -->
+	<select id="getEmpCnt" resultType="int">
+		select count(*)
+		from employee
+	</select>
+
+	<!-- 사원 페이징 조회 -->
+	<select id="selectEmpPaging" resultType="EmployeeVo" parameterType="map">
+		select *
+		from (select a.*, rownum rn
+				from (select employee.*
+						from employee
+						<where>
+							<if test="emp_nm != null and emp_nm != ''">
+								emp_nm like '%' || #{emp_nm} || '%' and
+							</if>
+							<if test="emp_sq != null and emp_sq != 0">
+								or emp_sq like '%' || #{emp_sq} || '%' and
+							</if>
+							<if test="emp_dpt != null and emp_dpt != 0">
+								or emp_dpt = #{emp_dpt} and
+							</if>
+							emp_flag = 'n'
+						</where>
+					order by emp_sq) a) a
+		where rn between (#{page}-1)*#{pageSize}+1 and #{page}*#{pageSize}
+	</select>
+	
+	<!-- 조건검색 사원수 조회 -->
+	<select id="getSearchEmpCnt" resultType="int" parameterType="EmployeeVo">
+		select count(*)
+		from employee
+		<where>
+			<if test="emp_nm != null and emp_nm != ''">
+				emp_nm like '%' || #{emp_nm} || '%'
+			</if>
+			<if test="emp_sq != null and emp_sq != 0">
+				or emp_sq like '%' || #{emp_sq} || '%'
+			</if>
+			<if test="emp_dpt != null and emp_dpt != 0">
+				or emp_dpt = #{emp_dpt}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 아이디 찾기 위한 회원 조회 -->
+	<select id="select_emp_findid" resultType="EmployeeVo" parameterType="String">
+		select * 
+		  from employee
+		 where emp_nm = #{emp_nm}
+		   and emp_phone = #{emp_phone} 
+	</select>
+	
+	<!-- 비밀번호 찾기 위한 회원 조회 -->
+	<select id="select_emp_findpw" resultType="EmployeeVo" parameterType="EmployeeVo">
+		select * 
+		  from employee
+		 where emp_sq = #{emp_sq}
+		   and emp_phone = #{emp_phone} 
+	</select>
+	
+	<!-- 사원 등록 -->
+	<insert id="insertEmployee" parameterType="EmployeeVo">
+		insert into employee(emp_sq, emp_dpt, emp_grade, emp_nm, emp_pass, emp_phone, 
+							 emp_addr1, emp_addr2, emp_com_email, emp_psn_email, emp_ent, 
+							 emp_fnl_mod, emp_img_path, emp_img_realpath, emp_flag) 
+		
+		values (#{emp_sq}, #{emp_dpt}, #{emp_grade}, #{emp_nm}, #{emp_pass}, #{emp_phone}, 
+				#{emp_addr1}, #{emp_addr2}, #{emp_com_email}, #{emp_psn_email}, #{emp_ent},
+				sysdate, #{emp_img_path}, #{emp_img_realpath}, 'n')
+	</insert>
+	
+	<!-- 서명 등록/수정 -->
+	<update id="updateEmpSign" parameterType="EmployeeVo">
+		update employee
+		   set emp_sign = #{emp_sign}
+		 where emp_sq = #{emp_sq}
+	</update>
+	
+	<update id="deleteEmp" parameterType="EmployeeVo">
+		update employee
+			set 
+			emp_nm=#{emp_nm},
+			emp_pass=#{emp_pass},
+			emp_phone=#{emp_phone},
+			emp_addr1=#{emp_addr1},
+			emp_addr2=#{emp_addr2},
+			emp_com_email=#{emp_com_email},
+			emp_psn_email=#{emp_psn_email},			
+			emp_flag = #{emp_flag},
+			emp_fnl_mod =sysdate
+		where emp_sq =#{emp_sq}
+	</update>
+	
+	<!-- 전체 사원 리스트 : 퇴사한 사원 제외 -->
+	<select id="getAllEmp" resultType="EmployeeVo">
+		select *
+		  from employee
+		 where emp_flag = 'n'
+	</select>
+	
+	<!-- 접속여부 update -->
+	<update id="updateOn" parameterType="EmployeeVo">
+		update employee
+		set emp_on = #{emp_on}
+		where emp_sq = #{emp_sq}
+	</update>
+
+</mapper> 

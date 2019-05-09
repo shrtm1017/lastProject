@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="todolist">
+	<!-- 해당 회원의 todolist 조회 -->
+	<select id="selectTodo" resultType="TodolistVo" parameterType="int">
+		select * from todolist where tdl_emp_sq = #{emp_sq}
+	</select>
+	
+	<!-- todolist 추가 -->
+	<insert id="insertTodo" parameterType="TodolistVo">
+		insert into todolist
+		values(TODOLIST_SEQ.nextval,#{tdl_emp_sq},#{tdl_con},sysdate,#{tdl_comp})
+	</insert>
+	
+	<!-- 해당 todolist update -->
+	<update id="updateTodo" parameterType="TodolistVo">
+		update todolist set tdl_con=#{tdl_con} where tdl_sq = #{tdl_sq}
+	</update>
+	
+	<!-- 해당 todolist delete -->
+	<delete id="deleteTodo">
+		delete from todolist where tdl_sq = #{tdl_sq}
+	</delete>
+	
+	<update id="updateTodochk" parameterType="TodolistVo">
+		update todolist set tdl_comp=#{tdl_comp} where tdl_sq = #{tdl_sq}
+	</update>
+	
+</mapper> 

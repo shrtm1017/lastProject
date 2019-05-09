@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="commute">
+
+	<!-- 옵션 등록 -->
+	<insert id="gotoWorkCommute" parameterType="CommuteVo">
+		<selectKey keyProperty="cmt_sq" resultType="int" order="BEFORE">
+			select commute_seq.nextval from dual
+		</selectKey>
+		insert into cmt (cmt_sq, cmt_emp_sq, cmt_srt_tm,cmt_end_tm,cmt_div)
+		<!-- values (#{cmt_sq}, #{cmt_emp_sq},to_char(sysdate,'yyyy.mm.dd hh24:mi:SS'),sysdate,#{cmt_div}) -->
+		values (#{cmt_sq},
+		#{cmt_emp_sq},#{cmt_srt_tm},#{cmt_end_tm},#{cmt_div})
+
+	</insert>
+	<update id="gotoHomeCommute" parameterType="CommuteVo">
+		update cmt
+		set
+		cmt_end_tm =#{cmt_end_tm }
+		where cmt_srt_tm =#{cmt_srt_tm}
+		and
+		cmt_emp_sq = #{cmt_emp_sq}
+	</update>
+	<select id="CommuteAllList" resultType="CommuteVo">
+		select * from cmt
+	</select>
+	<select id="CommuteSelectPagingList" resultType="CommuteVo"
+		parameterType="Map">
+
+		select cmt_emp_sq,cmt_srt_tm,cmt_end_tm,cmt_div
+		from
+		(select a.*, rownum rn
+		from
+		(select cmt.*
+		from cmt
+		where cmt_emp_sq =
+		#{cmt_emp_sq}
+
+		order by cmt_sq desc) a) a
+		where rn between (#{page} - 1)
+		* #{pageSize}
+		+ 1
+		and #{page} * #{pageSize}
+	</select>
+	<select id="CommuteSelectCnt" resultType="integer"
+		parameterType="int">
+		select count(*) from
+		cmt where cmt_emp_sq = #{cmt_emp_sq}
+	</select>
+	<select id="CommuteCheckList" resultType="CommuteVo">
+		select
+		substr(cmt_srt_tm,1,instr(cmt_srt_tm,' ',1,1)-1) as cmt_srt_tm
+		from
+		(select cmt_srt_tm,cmt_emp_sq FROM CMT)
+		where cmt_emp_sq =
+		#{cmt_emp_sq}
+	</select>
+	<select id="CommuteCheck" resultType="CommuteVo" parameterType="CommuteVo">
+		select cmt_srt_tm,cmt_emp_sq
+		from cmt
+		where
+		substr(cmt_srt_tm,1,instr(cmt_srt_tm,' ',1,1)-1) = to_char(sysdate,
+		'yyyy-MM-dd')
+		and cmt_emp_sq = #{cmt_emp_sq}
+	</select>
+	<select id="CommuteSearch" resultType="CommuteVo" parameterType="Map">
+		select cmt_emp_sq,cmt_srt_tm,cmt_end_tm,cmt_div
+		from
+		(select a.*, rownum
+		rn
+		from
+		(select cmt.*
+		from cmt
+		<where>
+			<if test="cmt_srt_tm != null and cmt_srt_tm != ''">
+				cmt_srt_tm between to_char(to_date(#{cmt_srt_tm},
+				'YYYY-MM-DD'),'yyyy-mm-dd') and to_char(to_date(#{cmt_end_tm},
+				'YYYY-MM-DD')+1,'yyyy-mm-dd')
+				and cmt_emp_sq =#{cmt_emp_sq}
+			</if>
+			<if test="cmt_end_tm != null and cmt_end_tm != ''">
+				or cmt_end_tm between
+				to_char(to_date(#{cmt_srt_tm},
+				'YYYY-MM-DD'),'yyyy-mm-dd') and
+				to_char(to_date(#{cmt_end_tm},'YYYY-MM-DD')+1,'yyyy-mm-dd')
+			</if>
+			and cmt_emp_sq =#{cmt_emp_sq}
+		</where>
+		<!-- where cmt_srt_tm between to_char(to_date(#{cmt_srt_tm}, -->
+		<!-- 'YYYY-MM-DD'),'yyyy-mm-dd') and to_char(to_date(#{cmt_end_tm}, -->
+		<!-- 'YYYY-MM-DD')+1,'yyyy-mm-dd') -->
+		<!-- or cmt_end_tm between -->
+		<!-- to_char(to_date(#{cmt_srt_tm}, -->
+		<!-- 'YYYY-MM-DD'),'yyyy-mm-dd') and -->
+		<!-- to_char(to_date(#{cmt_end_tm},'YYYY-MM-DD')+1,'yyyy-mm-dd') -->
+		<!-- and -->
+		<!-- cmt_emp_sq =#{cmt_emp_sq} -->
+
+		order by cmt_sq desc) a) a
+		where rn between
+		(#{page} - 1)
+		* #{pageSize}
+		+
+		1
+		and #{page} * #{pageSize}
+	</select>
+	<select id="CommuteSearchCnt" resultType="integer"
+		parameterType="CommuteVo">
+		select count(*) from
+		cmt
+		<where>
+			
+			<if test="cmt_srt_tm != null and cmt_srt_tm != ''">
+				cmt_srt_tm between to_char(to_date(#{cmt_srt_tm},
+				'YYYY-MM-DD'),'yyyy-mm-dd') and to_char(to_date(#{cmt_end_tm},
+				'YYYY-MM-DD')+1,'yyyy-mm-dd')
+				and cmt_emp_sq =#{cmt_emp_sq}
+			</if>
+			<if test="cmt_end_tm != null and cmt_end_tm != ''">
+				or cmt_end_tm between
+				to_char(to_date(#{cmt_srt_tm},
+				'YYYY-MM-DD'),'yyyy-mm-dd') and
+				to_char(to_date(#{cmt_end_tm},'YYYY-MM-DD')+1,'yyyy-mm-dd')
+			</if>
+			and cmt_emp_sq =#{cmt_emp_sq}
+		</where>
+
+	</select>
+
+</mapper> 

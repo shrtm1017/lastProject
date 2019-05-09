@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="log">
+
+	<insert id="insertLog" parameterType="LogVo">
+		insert into Log (log_sq,log_id,log_str_dt,log_end_dt,session_id,log_ip)
+		values (log_seq.nextval, #{log_id},to_char(sysdate,'yyyy-MM-dd hh24:mi:ss'),null,#{session_id},#{log_ip})
+	</insert>
+
+	<select id="selectLogList" resultType="LogVo" parameterType="Map">
+		select *
+		from
+		(select a.* ,rownum rn
+		from
+		(select
+		log.*
+		from log
+		where log_id = #{log_id}
+		order by
+		log_sq desc)
+		a ) a
+
+		where
+		rn between (#{page}-1) *
+		#{pageSize}+1 and
+		#{page}*#{pageSize}
+	</select>
+		<select id="selectLogGetAllList" resultType="LogVo" parameterType="Map">
+		select *
+		from
+		(select a.* ,rownum rn
+		from
+		(select
+		log.*
+		from log
+		order by
+		log_sq desc)
+		a ) a
+
+		where
+		rn between (#{page}-1) *
+		#{pageSize}+1 and
+		#{page}*#{pageSize}
+	</select>
+	<select id="selectLog" resultType="LogVo" parameterType="int">
+		select *
+		  from log
+		 where log_id = #{log_id}
+		  and log_sq = (select max(log_sq) from log
+		  where log_id = #{log_id})
+	</select>
+
+	<update id="updateLog" parameterType="string">
+		update Log
+		   set log_end_dt = to_char(sysdate,'yyyy-MM-dd hh24:mi:ss')
+		 where session_id = #{session_id}
+		 
+	</update>
+	
+	<select id="selectLogCnt" parameterType="int" resultType="int">
+		select count(*) from log
+		where log_id=#{log_id}
+	</select>
+
+
+</mapper> 

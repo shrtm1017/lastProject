@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="message">
+	<insert id="insertMessageSend" parameterType="MessageSendVo">
+		insert into message_send(msg_rec_sq, msg_emp_send, msg_send_dt, msg_nm, msg_con)
+		values(MESSAGESEND_SEQ.NEXTVAL, #{msg_emp_send}, sysdate, #{msg_nm}, #{msg_con})
+	</insert>
+	
+	<insert id="insertMessageMany" parameterType="MessageManyVo">
+		insert into message_many VALUES(#{mn_msg_send_sq},#{mn_emp_rec_sq})
+	</insert>
+	
+	<insert id="insertMessageReceive" parameterType="MessageReceiveVo">
+		insert into message_receive VALUES(messagereceive_seq.nextval,#{msg_emp_send},#{msg_emp_rec},sysdate,'n','제목',#{msg_con},'n')
+	</insert>
+	
+	<select id="selectSeq" parameterType="String" resultType="MessageSendVo">
+		select * from message_send
+		where msg_emp_send = #{sss}
+		order by MSG_rec_sq desc
+	</select>
+	
+	<select id="selectRec" parameterType="String" resultType="MessageReceiveVo">
+		SELECT
+		    *
+		FROM message_receive
+		where MSG_EMP_REC = #{sss}
+		order by MSG_DT desc
+	</select>
+	
+	<select id="selectRecs" parameterType="String" resultType="Map">
+		select a.*,b.MN_EMP_REC_SQ from message_send a,message_many b
+		where a.msg_emp_send = #{sss}
+        and a.MSG_REC_SQ = b.Mn_msg_send_sq
+		order by a.MSG_rec_sq desc
+	</select>
+	
+	<select id="selectimpRec" parameterType="String" resultType="MessageReceiveVo">
+		SELECT
+		    *
+		FROM message_receive
+		where MSG_EMP_REC = #{sss}
+        and msg_ipt = 'y'
+        order by MSG_DT desc
+	</select>
+	
+	<select id="myselectRec" parameterType="String" resultType="MessageReceiveVo">
+		SELECT
+   		 *
+		FROM message_receive
+		where MSG_EMP_REC = #{sss}
+		and MSG_EMP_REC = MSG_EMP_SEND
+		order by MSG_DT desc
+	</select>
+	
+	<select id="selectSend" parameterType="String" resultType="MessageSendVo">
+		select
+		*
+		from message_send
+		where msg_emp_send = #{sss}
+		order by MSG_SEND_DT desc
+	</select>
+	
+	<select id="selectSends" parameterType="String" resultType="Map">
+		select
+		a.*,b.MN_EMP_REC_SQ
+		from message_send a,message_many b
+		where msg_emp_send = #{sss}
+        and a.MSG_REC_SQ = b.MN_MSG_SEND_SQ
+		order by MSG_SEND_DT desc
+	</select>
+	
+	<!-- 받은쪽지 페이징 -->
+ 	<select id="selectMessageReceivePaging" resultType="MessageReceiveVo" parameterType="Map">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select message_receive.*
+		                  from message_receive
+		                   where message_receive.MSG_EMP_SEND = #{memId}
+		                 order by msg_rec_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	<!-- 내게쓴쪽지 페이징 -->
+ 	<select id="selectMessageMyPaging" resultType="MessageReceiveVo" parameterType="Map">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select message_receive.*
+		                  from message_receive
+		                  where MSG_EMP_REC = #{memId}
+							and MSG_EMP_REC = MSG_EMP_SEND
+		                 order by msg_rec_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	<!-- 보낸쪽지 페이징 -->
+ 	<select id="selectMessageSendPaging" resultType="MessageSendVo" parameterType="Map">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select message_send.*
+		                  from message_send
+							where msg_emp_send = #{memId}
+		                 order by msg_rec_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	<!-- 체크한 쪽지 페이징 -->
+ 	<select id="selectMessageCheckPaging" resultType="MessageReceiveVo" parameterType="Map">
+	 	select *
+	  	  from
+		       (select a.*, rownum rn
+		          from (select message_receive.*
+		                  from message_receive
+		                  where MSG_EMP_REC = #{memId}
+       					 and msg_ipt = 'y'
+		                 order by msg_rec_sq desc) a) a
+ 		 where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+ 	</select>
+	
+	<delete id="deleteReceive" parameterType="String">
+		delete from Message_receive
+		where MSG_REC_SQ = #{sss}
+	</delete>
+	
+	<update id="updateReceive" parameterType="String">
+		update message_receive set msg_ipt='y' where msg_rec_sq = #{sss}
+	</update>
+	
+</mapper> 

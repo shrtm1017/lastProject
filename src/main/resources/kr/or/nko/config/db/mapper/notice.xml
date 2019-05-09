@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="notice">
+	<select id="getallNoticeList" resultType="NoticeVo"
+		parameterType="Map">
+		select *
+		from
+		(select a.* ,rownum rn
+		from
+		(select
+		ntc.*,b.emp_nm
+		from notice ntc,employee b
+		where ntc.ntc_emp_sq =
+		b.emp_sq
+		and ntc_div = #{ntc_div}
+		order by ntc_sq desc)
+		a ) a
+
+		where rn
+		between (#{page}-1) *
+		#{pageSize}+1 and
+		#{page}*#{pageSize}
+
+
+	</select>
+	<select id="NoticeListCnt" resultType="integer" parameterType="int">
+		select count(*)
+		from notice
+		where ntc_div=#{ntc_div}
+	</select>
+	<select id="notice_divNo" resultType="NoticeVo">
+		select *
+		from notice
+	</select>
+	<!-- <selectKey keyProperty="ntc_sq" resultType="String" order="BEFORE"> -->
+	<!-- select notice_seq.nextval from dual -->
+	<!-- </selectKey> -->
+	<insert id="notice_Register" parameterType="NoticeVo">
+		insert into notice
+		(ntc_sq,ntc_emp_sq,ntc_div,ntc_nm,ntc_con,ntc_dt,ntc_hits,ntc_fl_nm,ntc_fl_path)
+		values
+		(notice_seq.nextval,
+		#{ntc_emp_sq},
+		#{ntc_div,jdbcType=VARCHAR},
+		#{ntc_nm,jdbcType=VARCHAR},
+		#{ntc_con,jdbcType=VARCHAR},
+		sysdate,
+		#{ntc_hits,jdbcType=VARCHAR},
+		#{ntc_fl_nm,jdbcType=VARCHAR},
+		#{ntc_fl_path,jdbcType=VARCHAR})
+	</insert>
+
+	<select id="selectNotice" resultType="NoticeVo" parameterType="int">
+		select
+		ntc.*,b.emp_nm
+		from notice ntc,employee b
+		where ntc.ntc_emp_sq =b.emp_sq and ntc_sq = #{ntc_sq}
+	</select>
+
+	<delete id="deleteNotice" parameterType="NoticeVo">
+		delete from notice where
+		ntc_sq=#{ntc_sq}
+	</delete>
+	<update id="updateNotice" parameterType="NoticeVo">
+		update notice set
+		ntc_nm=nvl(#{ntc_nm},ntc_nm),
+		ntc_con=nvl(#{ntc_con},ntc_con),
+		ntc_fl_nm=#{ntc_fl_nm,jdbcType=VARCHAR},
+		ntc_fl_path=nvl(#{ntc_fl_path,jdbcType=VARCHAR},ntc_fl_path)
+
+		where
+		ntc_sq=#{ntc_sq}
+	</update>
+	<update id="updateHits" parameterType="int">
+		update notice
+		set ntc_hits
+		= ntc_hits + 1
+		where ntc_sq = #{ntc_sq}
+	</update>
+
+	<select id="selectNoticeList" resultType="NoticeVo"
+		parameterType="Map">
+		select *
+		from
+		(select a.*, rownum rn
+		from (select ntc.*,b.emp_nm
+		from
+		notice ntc,employee b
+
+
+		<!-- select * from employee where or emp_sq like '%' || #{emp_sq} || '%' 
+			이런식으로 될경우 문법엔 맞지 않지만 mybatis에서 자동으로 삭제해줌 -->
+		<where>
+			ntc.ntc_emp_sq = b.emp_sq
+			and ntc_div=#{ntc_div}
+			<if test="ntc_nm != null and ntc_nm != ''">
+				and ntc_nm like '%' || #{ntc_nm } || '%'
+			</if>
+			<if test="ntc_emp_sq != null and ntc_emp_sq != 0">
+				and ntc_div=#{ntc_div}
+				and ntc_emp_sq = #{ntc_emp_sq }
+				<!-- or ntc_nm||ntc_emp_sq like '%'부서명으로 부서번호를 먼저 조회후 조회되어 부서번호로 조회하기때문에 
+					like를 쓰지않음 -->
+			</if>
+		</where>
+		order by ntc_sq desc) a) a
+		where rn between (#{page} - 1) * #{pageSize} + 1 and #{page} * #{pageSize}
+
+
+	</select>
+	<select id="selectNoticeListCnt" resultType="Integer"
+		parameterType="NoticeVo">
+		select count(*)
+		from notice
+
+		<where>
+			ntc_div =#{ntc_div}
+			<if test="ntc_nm != null and ntc_nm != ''">
+				or ntc_nm like '%' || #{ntc_nm } || '%'
+			</if>
+			<if test="ntc_emp_sq != null and ntc_emp_sq != 0">
+				or ntc_emp_sq = #{ntc_emp_sq }
+
+
+				<!-- or ntc_nm||ntc_emp_sq like '%'부서명으로 부서번호를 먼저 조회후 조회되어 부서번호로 조회하기때문에 
+					like를 쓰지않음 -->
+			</if>
+		</where>
+
+	</select>
+	<select id="selectMainNotice" resultType="NoticeVo"
+		parameterType="int">
+		select ntc_sq, ntc_nm
+		from notice
+		where ntc_div = #{ntc_div}
+		and rownum &lt;= 5
+		order by ntc_sq desc
+	</select>
+</mapper>

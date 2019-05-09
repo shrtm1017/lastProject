@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="work">
+
+	<!--
+		db 데이터타입이 clob형일경우 string으로 받아오면 문제없지만
+		map에 담아 사용하는경우 명시적으로 선언해줘야 정상적으로 출력이 가능하다!!!
+	 -->
+	<resultMap type="map" id="clobResultMap">
+		<result column="WK_CON" property="WK_CON" jdbcType="CLOB" javaType="java.lang.String" />
+		<result column="HIS_CON" property="HIS_CON" jdbcType="CLOB" javaType="java.lang.String" />
+	</resultMap>
+	
+	<!-- 프로젝트 등록 -->
+	<!--
+		insert되기전에 시퀀스값을 구하고 정상적으로 등록이되면 해당vo에서 getter를 이용하여 시퀀스값 조회가능
+		insert 결과값이 1이 되면 ProjectVo.getPro_sq()로 시퀀스값 조회가능
+	 -->
+	<insert id="insertProject" parameterType="ProjectVo">
+		<!-- insert되기전에 시퀀스값을 구하는 방법 -->
+		<selectKey keyProperty="pro_sq" resultType="int" order="BEFORE">
+	   		select project_seq.nextval from dual
+	    </selectKey>
+	    
+		insert into project(pro_sq, pro_nm, pro_exp, pro_open)
+		values(#{pro_sq}, #{pro_nm}, #{pro_exp}, #{pro_open})
+	</insert>
+	
+	<!-- 프로젝트 구성원 등록 -->
+	<insert id="insertMember" parameterType="ProjectMemVo">
+		insert into project_member(pro_sq, pro_mem)
+		values(#{pro_sq}, #{pro_mem})
+	</insert>
+	
+	<!-- 프로젝트 전체조회 -->
+	<select id="selectAllProjectList" resultType="ProjectVo">
+		select *
+		from project
+	</select>
+	
+	<!-- 해당프로젝트의 멤버조회 -->
+	<select id="selectMemberList" resultType="EmployeeVo" parameterType="int">
+		select b.*
+		from project_member a, employee b
+		where a.pro_mem = b.emp_sq
+		and a.pro_sq = #{pro_sq}
+	</select>
+	
+	<!-- 멤버에 해당하는 프로젝트 조회 -->
+	<select id="selectProjectList" resultType="ProjectVo" parameterType="int">
+		select a.*
+		from project a, project_member b
+		where a.pro_sq = b.pro_sq
+		and b.pro_mem = #{pro_mem}
+	</select>
+	
+	<!-- 프로젝트 조회 -->
+	<select id="selectProject" resultType="ProjectVo" parameterType="int">
+		select *
+		from project
+		where pro_sq = #{pro_sq}
+	</select>
+	
+	<!-- 상위업무조회(자신을 포함한 상위업무만 조회되며 하위업무는 조회되지 않음) -->
+	<select id="selectWorkList" resultType="WorkVo" parameterType="map">
+		select *
+		from work
+		where pro_sq = #{pro_sq}
+			<if test="wk_sq != 0 and wk_sq != null">
+				and wk_sq not in (select wk_sq from work
+							start with wk_sq = #{wk_sq}
+							connect by prior wk_sq = wk_hr_sq)
+			</if>
+		<!-- 조건을 사용할때는 int나 string 파라미터는 파라미터로 받아온 값을 의미하는 _parameter를 사용해야함-->
+<!-- 		<if test="_parameter != 0"> -->
+<!-- 			and pro_sq = #{pro_sq} -->
+<!-- 		</if> -->
+	</select>
+	
+	<!-- 업무등록 -->
+	<insert id="insertWork" parameterType="WorkVo">
+		<!-- insert되기전에 시퀀스값을 구하는 방법 -->
+		<selectKey keyProperty="wk_sq" resultType="int" order="BEFORE">
+	   		select work_seq.nextval from dual
+	    </selectKey>
+		insert into work
+		(wk_sq, wk_hr_sq, 
+		wk_nm, wk_str_dt, wk_end_dt, wk_ins_dt, wk_type, wk_state, wk_progress, wk_con, pro_sq, wk_upd_dt)
+		values
+		(#{wk_sq}, <if test="wk_hr_sq == 0">null</if><if test="wk_hr_sq != 0">#{wk_hr_sq}</if>,
+		#{wk_nm}, #{wk_str_dt}, #{wk_end_dt}, sysdate, #{wk_type}, #{wk_state}, #{wk_progress}, #{wk_con}, #{pro_sq}, sysdate)
+	</insert>
+	
+	<!-- 업무첨부파일 등록 -->
+	<insert id="insertFile" parameterType="WorkFileVo">
+		insert into work_file
+		(wk_fl_sq, wk_sq, wk_fl_nm, wk_fl_path)
+		values
+		(work_file_seq.nextval, #{wk_sq}, #{wk_fl_nm}, #{wk_fl_path})
+	</insert>
+	
+	<!-- 첨부파일번호로 업무첨부파일 조회 -->
+	<select id="selectFile" resultType="WorkFileVo" parameterType="int">
+		select *
+		from work_file
+		where wk_fl_sq = #{wk_fl_sq}
+	</select>
+	
+	<!-- 업무관련사원 등록 -->
+	<insert id="insertRelation" parameterType="WorkRelationVo">
+		insert into work_relation
+		(wk_sq, wk_emp_sq, wk_code)
+		values
+		(#{wk_sq}, #{wk_emp_sq}, #{wk_code})
+	</insert>
+	
+	<!-- 업무작업내역 등록 -->
+	<insert id="insertHistory" parameterType="WorkHistoryVo">
+		insert into work_history
+		(his_sq, his_wk_sq, his_emp_sq, his_nm, his_con, his_dt)
+		values
+		(history_seq.nextval, #{his_wk_sq}, #{his_emp_sq}, #{his_nm}, #{his_con}, sysdate)
+	</insert>
+	
+	<!-- 작업내역 조회(조건에 따라 전체조회, 프로젝트에 해당하는 작업내역 조회) -->
+	<select id="selectHistoryMapList" resultType="map" parameterType="map" resultMap="clobResultMap">
+		select *
+		from    (select work.*
+		        from work
+		        where pro_sq
+		        <!-- 프로젝트가 없는 사원일 경우 not in 쿼리 실행 -->
+		        <choose>
+		        	<when test="notIn != null">
+		        		not in
+		        	</when>
+		        	<otherwise>
+		        		in
+		        	</otherwise>
+		        </choose>
+		        <!-- project 번호가 담겨있는 리스트를 받아서 for문을 돌아 list에 담겨있는 번호의 프로젝트만 조회 -->
+		        <foreach collection="projectList" item="project" open="(" close=")" separator=",">
+			        #{project.value}
+		        </foreach>
+		        )a, work_history b, employee c, project d
+		where a.wk_sq = b.his_wk_sq
+		and b.his_emp_sq = c.emp_sq
+		and d.pro_sq = a.pro_sq
+			<if test="his_wk_sq != 0 and his_wk_sq != null">
+				and b.his_wk_sq = #{his_wk_sq}
+			</if>
+		order by b.his_dt desc
+	</select>
+ 	
+ 	<!-- 업무조회(조건검색) -->
+ 	<select id="selectWorkMap" resultType="map" parameterType="map">
+ 		select *
+		from project a, work b, work_relation c, employee d
+		where a.pro_sq = b.pro_sq
+		and b.wk_sq = c.wk_sq
+		and c.wk_emp_sq = d.emp_sq
+		<!-- map에 있는 객체를 받아올때 숫자는 자동적으로 숫자로 인식을 하나봅니다...문자열비교 안통함(삽질 오지게함) -->
+		<if test="selectProjectState != null and selectProjectState == 1">
+			and b.pro_sq = #{pro_sq}
+		</if>
+		<if test="selectProjectState != null and selectProjectState == 2">
+			and b.pro_sq != #{pro_sq}
+		</if>
+		
+		<if test="selectTypeState != null and selectTypeState == 1">
+			and b.wk_type = #{wk_type}
+		</if>
+		<if test="selectTypeState != null and selectTypeState == 2">
+			and b.wk_type != #{wk_type}
+		</if>
+		
+		<if test="selectChargerState != null and selectChargerState == 1">
+			and c.wk_emp_sq = #{wk_emp_sq}
+		</if>
+		<if test="selectChargerState != null and selectChargerState == 2">
+			and c.wk_emp_sq != #{wk_emp_sq}
+		</if>
+		
+		<if test="selectState != null and selectState == 1">
+			and b.wk_state = '신규' or b.wk_state = '진행'
+		</if>
+		<if test="selectState != null and selectState == 2">
+			and b.wk_state = '완료'
+		</if>
+		<!-- or 조건이 적용된 것은 맨 마지막에서 해주는게 좋음-->
+		<if test="selectState != null and selectState == 3">
+			and b.wk_state = '신규' or b.wk_state = '진행' or b.wk_state = '완료'
+		</if>
+ 	</select>
+ 	
+ 	<!-- 업무 페이징 조회 -->
+ 	<select id="selectWorkPagingMap" resultType="map" parameterType="map">
+ 		select z.*
+		from (select z.*, rownum rn
+				from (select a.pro_nm, b.*, c.wk_emp_sq, d.emp_nm
+						from project a, work b, work_relation c, employee d
+						where a.pro_sq = b.pro_sq
+						and b.wk_sq = c.wk_sq
+						and c.wk_emp_sq = d.emp_sq
+						and b.pro_sq
+						<!-- 프로젝트가 없는 사원일 경우 not in 쿼리 실행 -->
+				        <choose>
+				        	<when test="notIn != null">
+				        		not in
+				        	</when>
+				        	<otherwise>
+				        		in
+				        	</otherwise>
+				        </choose>
+				        <!-- project 번호가 담겨있는 리스트를 받아서 for문을 돌아 list에 담겨있는 번호의 프로젝트만 조회 -->
+				        <foreach collection="projectList" item="project" open="(" close=")" separator=",">
+					        #{project.value}
+				        </foreach>
+						<!-- map에 있는 객체를 받아올때 숫자는 자동적으로 숫자로 인식을 하나봅니다...문자열비교 안통함(삽질 오지게함) -->
+						<if test="selectProjectState != null and selectProjectState == 1">
+							and b.pro_sq = #{pro_sq}
+						</if>
+						<if test="selectProjectState != null and selectProjectState == 2">
+							and b.pro_sq != #{pro_sq}
+						</if>
+						
+						<if test="selectTypeState != null and selectTypeState == 1">
+							and b.wk_type = #{wk_type}
+						</if>
+						<if test="selectTypeState != null and selectTypeState == 2">
+							and b.wk_type != #{wk_type}
+						</if>
+						
+						<if test="selectChargerState != null and selectChargerState == 1">
+							and c.wk_emp_sq = #{wk_emp_sq}
+						</if>
+						<if test="selectChargerState != null and selectChargerState == 2">
+							and c.wk_emp_sq != #{wk_emp_sq}
+						</if>
+						
+						<if test="selectState != null and selectState == 1">
+							and b.wk_state = '신규' or b.wk_state = '진행'
+						</if>
+						<if test="selectState != null and selectState == 2">
+							and b.wk_state = '완료'
+						</if>
+						<!-- or 조건이 적용된 것은 맨 마지막에서 해주는게 좋음-->
+						<if test="selectState != null and selectState == 3">
+							and b.wk_state = '신규' or b.wk_state = '진행' or b.wk_state = '완료'
+						</if>
+					order by b.wk_ins_dt desc) z) z
+		where rn between (#{page}-1)*#{pageSize}+1 and #{page}*#{pageSize}
+ 	</select>
+ 	
+ 	<!-- 해당 프로젝트 업무 페이징 조회 -->
+ 	<select id="selectWorkPagingMap2" resultType="map" parameterType="map">
+ 		select z.*
+		from (select z.*, rownum rn
+				from (select a.pro_nm, b.*, c.wk_emp_sq, d.emp_nm
+						from project a, work b, work_relation c, employee d
+						where a.pro_sq = b.pro_sq
+						and b.wk_sq = c.wk_sq
+						and c.wk_emp_sq = d.emp_sq
+						and b.pro_sq 
+						<!-- 프로젝트가 없는 사원일 경우 not in 쿼리 실행 -->
+				        <choose>
+				        	<when test="notIn != null">
+				        		not in
+				        	</when>
+				        	<otherwise>
+				        		in
+				        	</otherwise>
+				        </choose>
+						<!-- map에 있는 객체를 받아올때 숫자는 자동적으로 숫자로 인식을 하나봅니다...문자열비교 안통함(삽질 오지게함) -->
+						<if test="selectProjectState2 != null and selectProjectState2 == 1">
+							and b.pro_sq = #{pro_sq2}
+						</if>
+						<if test="selectProjectState2 != null and selectProjectState2 == 2">
+							and b.pro_sq != #{pro_sq2}
+						</if>
+						
+						<if test="selectTypeState2 != null and selectTypeState2 == 1">
+							and b.wk_type = #{wk_type2}
+						</if>
+						<if test="selectTypeState2 != null and selectTypeState2 == 2">
+							and b.wk_type != #{wk_type2}
+						</if>
+						
+						<if test="selectChargerState2 != null and selectChargerState2 == 1">
+							and c.wk_emp_sq = #{wk_emp_sq2}
+						</if>
+						<if test="selectChargerState2 != null and selectChargerState2 == 2">
+							and c.wk_emp_sq != #{wk_emp_sq2}
+						</if>
+						
+						<if test="selectState2 != null and selectState2 == 1">
+							and b.wk_state = '신규' or b.wk_state = '진행'
+						</if>
+						<if test="selectState2 != null and selectState2 == 2">
+							and b.wk_state = '완료'
+						</if>
+						<!-- or 조건이 적용된 것은 맨 마지막에서 해주는게 좋음-->
+						<if test="selectState2 != null and selectState2 == 3">
+							and b.wk_state = '신규' or b.wk_state = '진행' or b.wk_state = '완료'
+						</if>
+					order by b.wk_ins_dt desc) z) z
+		where rn between (#{page}-1)*#{pageSize}+1 and #{page}*#{pageSize}
+ 	</select>
+ 	
+ 	<!-- 전체 or 조건 업무수 조회 -->
+	<select id="getWorkCnt" resultType="int" parameterType="map">
+		select count(*)
+		from work a, project b, work_relation c, employee d
+		where b.pro_sq = a.pro_sq
+		and a.wk_sq = c.wk_sq
+		and c.wk_emp_sq = d.emp_sq
+		<!-- map에 있는 객체를 받아올때 숫자는 자동적으로 숫자로 인식을 하나봅니다...문자열비교 안통함(삽질 오지게함) -->
+		<if test="selectProjectState != null and selectProjectState == 1">
+			and a.pro_sq = #{pro_sq}
+		</if>
+		<if test="selectProjectState != null and selectProjectState == 2">
+			and a.pro_sq != #{pro_sq}
+		</if>
+		
+		<if test="selectTypeState != null and selectTypeState == 1">
+			and a.wk_type = #{wk_type}
+		</if>
+		<if test="selectTypeState != null and selectTypeState == 2">
+			and a.wk_type != #{wk_type}
+		</if>
+		
+		<if test="selectChargerState != null and selectChargerState == 1">
+			and c.wk_emp_sq = #{wk_emp_sq}
+		</if>
+		<if test="selectChargerState != null and selectChargerState == 2">
+			and c.wk_emp_sq != #{wk_emp_sq}
+		</if>
+		
+		<if test="selectState != null and selectState == 1">
+			and a.wk_state = '신규' or a.wk_state = '진행'
+		</if>
+		<if test="selectState != null and selectState == 2">
+			and a.wk_state = '완료'
+		</if>
+		<!-- or 조건이 적용된 것은 맨 마지막에서 해주는게 좋음-->
+		<if test="selectState != null and selectState == 3">
+			and a.wk_state = '신규' or a.wk_state = '진행' or a.wk_state = '완료'
+		</if>
+	</select>
+
+	<!-- 업무 번호에 해당하는 업무조회 -->
+	<select id="selectWork" parameterType="int" resultType="map" resultMap="clobResultMap">
+		select *
+		from project a, work b, work_relation c, employee d
+		where a.pro_sq = b.pro_sq
+		and b.wk_sq = c.wk_sq
+		and c.wk_emp_sq = d.emp_sq
+		and b.wk_sq = #{wk_sq}
+	</select>
+	
+	<!-- 업무수정 -->
+	<update id="updateWork" parameterType="workVo">
+		update work
+		set
+			wk_hr_sq = <if test="wk_hr_sq == 0">null</if><if test="wk_hr_sq != 0">#{wk_hr_sq}</if>,
+			wk_nm = #{wk_nm},
+		    wk_str_dt = #{wk_str_dt},
+		    wk_end_dt = #{wk_end_dt},
+		    wk_type = #{wk_type},
+		    wk_state = #{wk_state},
+		    wk_progress = #{wk_progress},
+		    wk_con = #{wk_con},
+		    pro_sq = #{pro_sq},
+		    wk_upd_dt = sysdate
+		where wk_sq = #{wk_sq}
+	</update>
+	
+	<!-- 업무관련 수정 -->
+	<update id="updateRelation" parameterType="WorkRelationVo">
+		update work_relation
+		set	wk_emp_sq = #{wk_emp_sq}
+		where wk_sq = #{wk_sq}
+	</update>
+	
+	<!-- 업무첨부파일 조회 -->
+	<select id="selectFileList" resultType="WorkFileVo" parameterType="int">
+		select *
+		from work_file
+		where wk_sq = #{wk_sq}
+	</select>
+	
+	<!-- 업무첨부파일 삭제 -->
+	<delete id="deleteFile" parameterType="int">
+		delete from work_file
+		where wk_fl_sq = #{wk_fl_sq}
+	</delete>
+	
+	<!-- 업무관련 삭제 -->
+	<delete id="deleteAllRelation" parameterType="int">
+		delete
+		from work_relation
+		<!-- 하위 업무의 업무번호 트리구조로 검색 -->
+		where wk_sq in (select wk_sq
+		                from work
+		                where wk_sq in (select wk_sq
+		                                from work
+		                                start with wk_sq = #{wk_sq}
+		                                connect by prior wk_sq = wk_hr_sq))
+	</delete>
+	
+	<!-- 업무첨부파일 모두삭제 -->
+	<delete id="deleteAllFile" parameterType="int">
+		delete
+		from work_file
+		<!-- 하위 업무의 업무번호 트리구조로 검색 -->
+		where wk_sq in (select wk_sq
+		                from work
+		                where wk_sq in (select wk_sq
+		                                from work
+		                                start with wk_sq = #{wk_sq}
+		                                connect by prior wk_sq = wk_hr_sq))
+	</delete>
+	
+	<!-- 업무작업내역 모두삭제 -->
+	<delete id="deleteAllHistory" parameterType="int">
+		delete
+		from work_history
+		<!-- 하위 업무의 업무번호 트리구조로 검색 -->
+		where his_wk_sq in (select wk_sq
+		                    from work
+		                    where wk_sq in (select wk_sq
+		                                    from work
+		                                    start with wk_sq = #{wk_sq}
+		                                    connect by prior wk_sq = wk_hr_sq))
+	</delete>
+	
+	<!-- 업무(하위업무포함) 모두삭제 -->
+	<delete id="deleteAllWork" parameterType="int">
+		delete
+		from work
+		<!-- 하위 업무의 업무번호 트리구조로 검색 -->
+		where wk_sq in (select wk_sq
+		                from work
+		                where wk_sq in (select wk_sq
+		                                from work
+		                                start with wk_sq = #{wk_sq}
+		                                connect by prior wk_sq = wk_hr_sq))  
+	</delete>
+	
+	<!-- 프로젝트번호로 type, state별 업무수 조회 -->
+	<select id="selectCount" parameterType="int" resultType="map">
+		select a.*, b.*, c.*, d.*, e.*, f.*, g.*, h.*, i.*, j.*, k.*, l.*
+		from    (select count(*) as new_ing
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '새기능'
+		        and wk_state = '신규' or wk_state = '진행')a,
+		        (select count(*) as new_fin
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '새기능'
+		        and wk_state = '완료')b,
+		        (select count(*) as new_sum
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '새기능')c,
+		        
+		        (select count(*) as defect_ing
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '결함'
+		        and wk_state = '신규' or wk_state = '진행')d,
+		        (select count(*) as defect_fin
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '결함'
+		        and wk_state = '완료')e,
+		        (select count(*) as defect_sum
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '결함')f,
+		        
+		        (select count(*) as support_ing
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '지원'
+		        and wk_state = '신규' or wk_state = '진행')g,
+		        (select count(*) as support_fin
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '지원'
+		        and wk_state = '완료')h,
+		        (select count(*) as support_sum
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '지원')i,
+		        
+		        (select count(*) as notice_ing
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '공지'
+		        and wk_state = '신규' or wk_state = '진행')j,
+		        (select count(*) as notice_fin
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '공지'
+		        and wk_state = '완료')k,
+		        (select count(*) as notice_sum
+		        from work
+		        where pro_sq = #{pro_sq}
+		        and wk_type = '공지')l
+	</select>
+	
+	<!-- 해당 업무 작업내역 조회 -->
+	<select id="selectHistoryList" parameterType="int" resultType="map" resultMap="clobResultMap">
+		select a.*, b.*
+		from work_history a, employee b
+		where a.his_emp_sq = b.emp_sq
+		and a.his_wk_sq = #{his_wk_sq}
+		order by a.his_dt desc
+	</select>
+	
+	<!-- 간트차트에 표시될 내용 계층형으로 조회 -->
+	<select id="selectGanttMap" parameterType="map" resultType="map" resultMap="clobResultMap">
+		select z.*
+		from (select a.*, level as wk_level, b.wk_emp_sq, c.emp_nm, d.pro_nm
+		        from work a, work_relation b, employee c, project d
+		        where a.wk_sq = b.wk_sq
+                and b.wk_emp_sq = c.emp_sq
+                and a.pro_sq = d.pro_sq
+		        start with a.wk_hr_sq is null
+		        connect by prior a.wk_sq = a.wk_hr_sq
+		        order siblings by a.wk_str_dt asc)z
+		<where>
+			z.pro_sq
+			<!-- 프로젝트가 없는 사원일 경우 not in 쿼리 실행 -->
+	        <choose>
+	        	<when test="notIn != null">
+	        		not in
+	        	</when>
+	        	<otherwise>
+	        		in
+	        	</otherwise>
+	        </choose>
+	        <!-- project 번호가 담겨있는 리스트를 받아서 for문을 돌아 list에 담겨있는 번호의 프로젝트만 조회 -->
+	        <foreach collection="projectList" item="project" open="(" close=")" separator=",">
+		        #{project.value}
+	        </foreach>
+	        
+			<!-- map에 있는 객체를 받아올때 숫자는 자동적으로 숫자로 인식을 하나봅니다...문자열비교 안통함(삽질 오지게함) -->
+			<if test="selectProjectState != null and selectProjectState == 1">
+				and z.pro_sq = #{pro_sq}
+			</if>
+			<if test="selectProjectState != null and selectProjectState == 2">
+				and z.pro_sq != #{pro_sq}
+			</if>
+			
+			<if test="selectTypeState != null and selectTypeState == 1">
+				and z.wk_type = #{wk_type}
+			</if>
+			<if test="selectTypeState != null and selectTypeState == 2">
+				and z.wk_type != #{wk_type}
+			</if>
+			
+			<if test="selectChargerState != null and selectChargerState == 1">
+				and z.wk_emp_sq = #{wk_emp_sq}
+			</if>
+			<if test="selectChargerState != null and selectChargerState == 2">
+				and z.wk_emp_sq != #{wk_emp_sq}
+			</if>
+			
+			<if test="selectState != null and selectState == 1">
+				and z.wk_state = '신규' or z.wk_state = '진행'
+			</if>
+			<if test="selectState != null and selectState == 2">
+				and z.wk_state = '완료'
+			</if>
+			<!-- or 조건이 적용된 것은 맨 마지막에서 해주는게 좋음-->
+			<if test="selectState != null and selectState == 3">
+				and z.wk_state = '신규' or z.wk_state = '진행' or z.wk_state = '완료'
+			</if>
+		</where>
+	</select>
+ 	
+</mapper>
